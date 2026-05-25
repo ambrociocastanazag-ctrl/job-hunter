@@ -1,0 +1,34 @@
+name: Gabriel Ambrocio
+level: junior
+location: Guatemala City
+timezone: UTC-6
+target_remote: true
+target_latam_friendly: true
+
+stack:
+  primary:
+    - Python
+    - Django
+    - FastAPI
+    - Flask
+    - PostgreSQL
+    - SQLAlchemy
+    - REST API
+  secondary:
+    - React
+    - Angular
+    - MySQL
+    - Docker
+    - JWT
+    - pytest
+    - Git
+
+languages:
+  - Spanish (native)
+  - English (B1)
+
+job_types:
+  - fulltime
+  - internship
+
+salary_expectation_usd_monthly: null  # no filtrar por salario

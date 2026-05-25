@@ -1,0 +1,17 @@
+.env
+data/jobs.db
+data/exports/
+logs/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.xlsx
+*.db
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
