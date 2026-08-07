@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Job Hunter Dashboard{% endblock %}
+{% block content %}
+<div class="container-fluid px-4">
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card stat-card stat-card--primary p-3 text-center">
+        <div class="stat-value text-primary">{{ stats.total }}</div>
+        <div class="small">Total en DB</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card stat-card--info p-3 text-center">
+        <div class="stat-value text-info">{{ stats.new }}</div>
+        <div class="small">Nuevas hoy</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card stat-card--success p-3 text-center">
+        <div class="stat-value text-success">{{ stats.hot }}</div>
+        <div class="small">Score ≥ {{ score_hot }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card stat-card--warning p-3 text-center">
+        <div class="stat-value text-warning">{{ stats.applied }}</div>
+        <div class="small">Aplicadas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" class="card p-3 mb-4 border-0 shadow-sm">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold mb-1">Buscar</label>
+        <input type="text" name="q" class="form-control form-control-sm"
+               placeholder="Título o empresa..." value="{{ filters.q }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold mb-1">Score mínimo</label>
+        <input type="number" name="score_min" class="form-control form-control-sm"
+               placeholder="ej. 50" min="0" max="100" value="{{ filters.score_min }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold mb-1">Estado</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for s in statuses %}
+          <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-center pt-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="is_new" id="isNew" value="1"
+                 {% if filters.is_new %}checked{% endif %}>
+          <label class="form-check-label small" for="isNew">Solo nuevas</label>
+        </div>
+      </div>
+      <div class="col-md-1">
+        <button type="submit" class="btn btn-primary btn-sm w-100">Filtrar</button>
+      </div>
+      <div class="col-md-1">
+        <a href="/" class="btn btn-outline-secondary btn-sm w-100">Limpiar</a>
+      </div>
+    </div>
+  </form>
+
+  <!-- Results count -->
+  <div class="mb-2 text-muted small">
+    {{ total_count }} vacante(s) — página {{ page }} de {{ total_pages }} — clic en una fila para ver la descripción
+  </div>
+
+  <!-- Table -->
+  {% if jobs %}
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th style="width:60px">Score</th>
+            <th>Puesto</th>
+            <th>Empresa</th>
+            <th>Ubicación</th>
+            <th>Stack</th>
+            <th style="width:90px">Publicado</th>
+            <th style="width:110px">Estado</th>
+            <th style="width:90px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in jobs %}
+
+          <!-- Job row -->
+          <tr class="job-row"
+              data-collapse-target="desc-{{ loop.index }}"
+              aria-expanded="false">
+            <td>
+              {% if job.score >= score_hot %}
+                <span class="badge score-hot rounded-pill">{{ job.score }}</span>
+              {% elif job.score >= 25 %}
+                <span class="badge score-warm rounded-pill">{{ job.score }}</span>
+              {% else %}
+                <span class="badge score-cold rounded-pill">{{ job.score }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if job.is_new %}<span class="new-dot" title="Nueva"></span>{% endif %}
+              <span class="fw-semibold">{{ job.title }}</span>
+              <div class="source-icon">{{ job.source }}</div>
+            </td>
+            <td>{{ job.company }}</td>
+            <td>
+              {{ job.location }}
+              {% if job.is_remote %}
+                <span class="badge remote-badge rounded-pill ms-1" style="font-size:.65rem">Remote</span>
+              {% endif %}
+            </td>
+            <td>
+              {% for tech in job.stack %}
+                <span class="badge badge-stack me-1">{{ tech }}</span>
+              {% endfor %}
+            </td>
+            <td class="text-muted small">{{ job.posted or job.scraped }}</td>
+            <td>
+              <select class="form-select form-select-sm status-select"
+                      data-job-id="{{ job.id }}"
+                      data-current="{{ job.status }}">
+                {% for s in statuses %}
+                <option value="{{ s }}" {% if job.status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <span class="chevron me-2">▼</span>
+              {% if job.job_url %}
+              <a href="{{ job.job_url }}" target="_blank"
+                 class="btn btn-outline-primary btn-sm">Ver</a>
+              {% endif %}
+            </td>
+          </tr>
+
+          <!-- Description row (collapsible) -->
+          <tr class="desc-row">
+            <td colspan="8">
+              <div class="collapse" id="desc-{{ loop.index }}">
+                <div class="desc-body">{% if job.description %}{{ job.description }}{% else %}Sin descripción disponible.{% endif %}</div>
+              </div>
+            </td>
+          </tr>
+
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="text-center text-muted py-5">
+    <div style="font-size:3rem">🔍</div>
+    <p class="mt-2">No hay vacantes con estos filtros.</p>
+    <a href="/" class="btn btn-outline-secondary btn-sm">Limpiar filtros</a>
+  </div>
+  {% endif %}
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <nav class="mt-4 d-flex justify-content-center">
+    <ul class="pagination pagination-sm">
+      <li class="page-item {% if page == 1 %}disabled{% endif %}">
+        <a class="page-link" href="?{{ filters|urlencode }}&page={{ page - 1 }}">‹ Anterior</a>
+      </li>
+      {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+          <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+        {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+          <li class="page-item"><a class="page-link" href="?{{ filters|urlencode }}&page={{ p }}">{{ p }}</a></li>
+        {% elif p == page - 3 or p == page + 3 %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+        <a class="page-link" href="?{{ filters|urlencode }}&page={{ page + 1 }}">Siguiente ›</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+  // Row collapse is handled globally by static/js/app.js via data-collapse-target.
+
+  // Status update
+  document.querySelectorAll('.status-select').forEach(select => {
+    select.addEventListener('change', function () {
+      const jobId = this.dataset.jobId;
+      const status = this.value;
+      const original = this.dataset.current;
+      fetch(`/job/${jobId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      }).then(r => r.json()).then(data => {
+        if (data.ok) {
+          this.dataset.current = status;
+          this.classList.add('border-success');
+          setTimeout(() => this.classList.remove('border-success'), 1500);
+        } else {
+          this.value = original;
+        }
+      }).catch(() => { this.value = original; });
+    });
+  });
+</script>
+{% endblock %}

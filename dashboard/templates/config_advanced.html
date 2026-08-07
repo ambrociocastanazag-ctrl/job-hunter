@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+{% block title %}Avanzado — Job Hunter{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 980px;">
+
+  <h4 class="mb-1">Configuración avanzada</h4>
+  <p class="text-muted small mb-4">
+    Expresiones regulares, pesos de scoring y parámetros de ejecución.
+    Para modalidad, keywords y umbrales simples ve a <a href="/config">Configuración</a>.
+  </p>
+
+  <!-- Búsqueda avanzada -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <h6 class="card-title mb-3">Búsqueda</h6>
+        <form method="POST" action="/config/reset-keys/search" class="reset-btn">
+          <input type="hidden" name="keys" value="results_wanted,hours_old_daily,hours_old_initial">
+          <input type="hidden" name="from" value="advanced">
+          <button type="submit" class="btn btn-link btn-sm p-0">restaurar por defecto</button>
+        </form>
+      </div>
+      <form method="POST" action="/config/advanced/search">
+        <div class="row g-3">
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Resultados por combinación</label>
+            <input type="number" name="results_wanted" class="form-control" min="1" max="100"
+                   value="{{ search.results_wanted }}">
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Horas atrás (corrida diaria)</label>
+            <input type="number" name="hours_old_daily" class="form-control" min="1"
+                   value="{{ search.hours_old_daily }}">
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Horas atrás (corrida inicial)</label>
+            <input type="number" name="hours_old_initial" class="form-control" min="1"
+                   value="{{ search.hours_old_initial }}">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm mt-3">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <h6 class="card-title mb-1">Filtros (expresiones regulares)</h6>
+        <form method="POST" action="/config/reset-keys/filters" class="reset-btn">
+          <input type="hidden" name="keys" value="exclude_title_words,allowed_location_patterns,impossible_years_patterns,max_age_days">
+          <input type="hidden" name="from" value="advanced">
+          <button type="submit" class="btn btn-link btn-sm p-0">restaurar por defecto</button>
+        </form>
+      </div>
+      <p class="hint mb-3">Cada línea es un patrón regex (case-insensitive). Una lista vacía desactiva ese filtro.</p>
+
+      <div class="card bg-light border-0 mb-3 p-3">
+        <p class="hint mb-2 fw-semibold">Probador de regex</p>
+        <div class="row g-2">
+          <div class="col-sm-5">
+            <input type="text" id="regex-pattern" class="form-control form-control-sm mono" placeholder="patrón, ej. \bsenior\b">
+          </div>
+          <div class="col-sm-5">
+            <input type="text" id="regex-sample" class="form-control form-control-sm" placeholder="texto de prueba">
+          </div>
+          <div class="col-sm-2">
+            <button type="button" id="regex-test-btn" class="btn btn-outline-primary btn-sm w-100">Probar</button>
+          </div>
+        </div>
+        <div id="regex-result" class="mt-2 small"></div>
+      </div>
+
+      <form method="POST" action="/config/advanced/filters">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Excluir por título</label>
+            <textarea name="exclude_title_words" class="form-control mono" rows="10">{{ exclude_title_words }}</textarea>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Ubicaciones permitidas</label>
+            <textarea name="allowed_location_patterns" class="form-control mono" rows="10">{{ allowed_location_patterns }}</textarea>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Años de experiencia imposibles</label>
+            <textarea name="impossible_years_patterns" class="form-control mono" rows="10">{{ impossible_years_patterns }}</textarea>
+          </div>
+        </div>
+        <div class="row g-3 mt-1">
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Edad máxima de vacante (días)</label>
+            <input type="number" name="max_age_days" class="form-control" min="1" value="{{ filters.max_age_days }}">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm mt-3">Guardar filtros</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scoring -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <h6 class="card-title mb-1">Reglas de scoring</h6>
+        <form method="POST" action="/config/reset-keys/scoring" class="reset-btn">
+          <input type="hidden" name="keys" value="rules,penalties,bonus_skill_points,bonus_skill_cap,remote_bonus">
+          <input type="hidden" name="from" value="advanced">
+          <button type="submit" class="btn btn-link btn-sm p-0">restaurar por defecto</button>
+        </form>
+      </div>
+      <p class="hint mb-3">
+        "Y también coincide con" es un segundo patrón opcional que debe cumplirse además del principal
+        (ej. la regla PostgreSQL + Python).
+      </p>
+
+      <form method="POST" action="/config/advanced/scoring">
+        <p class="fw-semibold small mb-2">Bonos</p>
+        <div class="table-responsive mb-3">
+          <table class="table table-sm rule-table align-middle" id="rules-table">
+            <thead><tr>
+              <th>Etiqueta</th><th>Patrón</th><th>Y también coincide con</th>
+              <th style="width:90px">Puntos</th><th style="width:120px">Campo</th>
+              <th style="width:90px">Activa</th><th style="width:40px"></th>
+            </tr></thead>
+            <tbody>
+              {% for rule in scoring.rules %}
+              <tr>
+                <td><input type="text" name="rule_label[]" class="form-control form-control-sm" value="{{ rule.label }}"></td>
+                <td><input type="text" name="rule_pattern[]" class="form-control form-control-sm mono" value="{{ rule.pattern }}" required></td>
+                <td><input type="text" name="rule_all_of[]" class="form-control form-control-sm mono" value="{{ (rule.all_of or [''])[0] }}" placeholder="opcional"></td>
+                <td><input type="number" name="rule_points[]" class="form-control form-control-sm" value="{{ rule.points }}"></td>
+                <td>
+                  <select name="rule_field[]" class="form-select form-select-sm">
+                    {% for f in ['title','description','location'] %}
+                    <option value="{{ f }}" {% if rule.field == f %}selected{% endif %}>{{ f }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td>
+                  <select name="rule_enabled[]" class="form-select form-select-sm">
+                    <option value="true" {% if rule.enabled %}selected{% endif %}>Sí</option>
+                    <option value="false" {% if not rule.enabled %}selected{% endif %}>No</option>
+                  </select>
+                </td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">✕</button></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-add-row="rules-table">+ Agregar regla</button>
+        </div>
+
+        <p class="fw-semibold small mb-2">Penalizaciones</p>
+        <div class="table-responsive mb-3">
+          <table class="table table-sm rule-table align-middle" id="penalties-table">
+            <thead><tr>
+              <th>Etiqueta</th><th>Patrón</th><th>Y también coincide con</th>
+              <th style="width:90px">Puntos</th><th style="width:120px">Campo</th>
+              <th style="width:90px">Activa</th><th style="width:40px"></th>
+            </tr></thead>
+            <tbody>
+              {% for rule in scoring.penalties %}
+              <tr>
+                <td><input type="text" name="penalty_label[]" class="form-control form-control-sm" value="{{ rule.label }}"></td>
+                <td><input type="text" name="penalty_pattern[]" class="form-control form-control-sm mono" value="{{ rule.pattern }}" required></td>
+                <td><input type="text" name="penalty_all_of[]" class="form-control form-control-sm mono" value="{{ (rule.all_of or [''])[0] }}" placeholder="opcional"></td>
+                <td><input type="number" name="penalty_points[]" class="form-control form-control-sm" value="{{ rule.points }}"></td>
+                <td>
+                  <select name="penalty_field[]" class="form-select form-select-sm">
+                    {% for f in ['title','description','location'] %}
+                    <option value="{{ f }}" {% if rule.field == f %}selected{% endif %}>{{ f }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td>
+                  <select name="penalty_enabled[]" class="form-select form-select-sm">
+                    <option value="true" {% if rule.enabled %}selected{% endif %}>Sí</option>
+                    <option value="false" {% if not rule.enabled %}selected{% endif %}>No</option>
+                  </select>
+                </td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">✕</button></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-add-row="penalties-table">+ Agregar penalización</button>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Puntos por habilidad encontrada</label>
+            <input type="number" name="bonus_skill_points" class="form-control" min="0" value="{{ scoring.bonus_skill_points }}">
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Tope de bono por habilidades</label>
+            <input type="number" name="bonus_skill_cap" class="form-control" min="0" value="{{ scoring.bonus_skill_cap }}">
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Bono por ser remoto</label>
+            <input type="number" name="remote_bonus" class="form-control" min="0" value="{{ scoring.remote_bonus }}">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm mt-3">Guardar scoring</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Stack detectado -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <h6 class="card-title mb-1">Detección de stack</h6>
+        <form method="POST" action="/config/reset/stack_patterns" class="reset-btn">
+          <input type="hidden" name="from" value="advanced">
+          <button type="submit" class="btn btn-link btn-sm p-0">restaurar por defecto</button>
+        </form>
+      </div>
+      <p class="hint mb-3">Tecnologías que se detectan en la descripción y se muestran como badges.</p>
+      <form method="POST" action="/config/advanced/stack">
+        <div class="table-responsive mb-2">
+          <table class="table table-sm rule-table align-middle" id="stack-table">
+            <thead><tr><th>Tecnología</th><th>Patrón</th><th style="width:40px"></th></tr></thead>
+            <tbody>
+              {% for name, pattern in stack_patterns.items() %}
+              <tr>
+                <td><input type="text" name="stack_name[]" class="form-control form-control-sm" value="{{ name }}"></td>
+                <td><input type="text" name="stack_pattern[]" class="form-control form-control-sm mono" value="{{ pattern }}"></td>
+                <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">✕</button></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-add-row="stack-table">+ Agregar tecnología</button>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm mt-2">Guardar stack</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Ejecución -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <h6 class="card-title mb-3">Ejecución</h6>
+        <form method="POST" action="/config/reset/runtime" class="reset-btn">
+          <input type="hidden" name="from" value="advanced">
+          <button type="submit" class="btn btn-link btn-sm p-0">restaurar por defecto</button>
+        </form>
+      </div>
+      <form method="POST" action="/config/advanced/runtime">
+        <div class="row g-3">
+          <div class="col-sm-3">
+            <label class="form-label small fw-semibold">Delay mínimo (s)</label>
+            <input type="number" name="request_delay_min" class="form-control" min="0" value="{{ runtime.request_delay_min }}">
+          </div>
+          <div class="col-sm-3">
+            <label class="form-label small fw-semibold">Delay máximo (s)</label>
+            <input type="number" name="request_delay_max" class="form-control" min="0" value="{{ runtime.request_delay_max }}">
+          </div>
+          <div class="col-sm-3">
+            <label class="form-label small fw-semibold">Reintentos (segundos, separados por coma)</label>
+            <input type="text" name="retry_delays" class="form-control" value="{{ retry_delays }}">
+          </div>
+          <div class="col-sm-3">
+            <label class="form-label small fw-semibold">País (Indeed/Glassdoor)</label>
+            <input type="text" name="country_indeed" class="form-control" value="{{ runtime.country_indeed }}">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm mt-3">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notificaciones -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <h6 class="card-title mb-3">Notificaciones</h6>
+        <form method="POST" action="/config/reset-keys/notifications" class="reset-btn">
+          <input type="hidden" name="keys" value="digest_top_n">
+          <input type="hidden" name="from" value="advanced">
+          <button type="submit" class="btn btn-link btn-sm p-0">restaurar por defecto</button>
+        </form>
+      </div>
+      <form method="POST" action="/config/advanced/notifications" class="mb-4">
+        <label class="form-label small fw-semibold">Vacantes en el digest diario</label>
+        <input type="number" name="digest_top_n" class="form-control" style="max-width:200px" min="1"
+               value="{{ notifications.digest_top_n }}">
+        <button type="submit" class="btn btn-primary btn-sm mt-2">Guardar</button>
+      </form>
+
+      <hr>
+
+      <form method="POST" action="/config/advanced/secrets">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Telegram Bot Token</label>
+            <input type="text" name="telegram_bot_token" class="form-control mono"
+                   value="{{ masked_token }}" placeholder="8886...">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Telegram Chat ID</label>
+            <input type="text" name="telegram_chat_id" class="form-control" value="{{ chat_id }}">
+          </div>
+        </div>
+        <p class="hint mt-1">Se guarda en <code>.env</code>, nunca en la configuración versionada.</p>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary btn-sm">Guardar credenciales</button>
+          <button type="button" id="test-telegram-btn" class="btn btn-outline-secondary btn-sm">Enviar mensaje de prueba</button>
+        </div>
+        <div id="test-telegram-result" class="small mt-2"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <h6 class="card-title mb-3">Dashboard</h6>
+        <form method="POST" action="/config/reset/dashboard" class="reset-btn">
+          <input type="hidden" name="from" value="advanced">
+          <button type="submit" class="btn btn-link btn-sm p-0">restaurar por defecto</button>
+        </form>
+      </div>
+      <form method="POST" action="/config/advanced/dashboard">
+        <div class="row g-3 align-items-end">
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Vacantes por página</label>
+            <input type="number" name="per_page" class="form-control" min="5" max="200" value="{{ dashboard_cfg.per_page }}">
+          </div>
+          <div class="col-sm-8">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="catch_up_on_start" id="catch_up_on_start"
+                     {% if dashboard_cfg.catch_up_on_start %}checked{% endif %}>
+              <label class="form-check-label small" for="catch_up_on_start">
+                Si el dashboard estaba cerrado a la hora programada, disparar esa corrida al arrancar
+              </label>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm mt-3">Guardar</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+  const rowTemplates = {
+    'rules-table': () => `<tr>
+      <td><input type="text" name="rule_label[]" class="form-control form-control-sm"></td>
+      <td><input type="text" name="rule_pattern[]" class="form-control form-control-sm mono" required></td>
+      <td><input type="text" name="rule_all_of[]" class="form-control form-control-sm mono" placeholder="opcional"></td>
+      <td><input type="number" name="rule_points[]" class="form-control form-control-sm" value="0"></td>
+      <td><select name="rule_field[]" class="form-select form-select-sm">
+        <option value="title">title</option><option value="description" selected>description</option><option value="location">location</option>
+      </select></td>
+      <td><select name="rule_enabled[]" class="form-select form-select-sm">
+        <option value="true" selected>Sí</option><option value="false">No</option>
+      </select></td>
+      <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">✕</button></td>
+    </tr>`,
+    'penalties-table': () => `<tr>
+      <td><input type="text" name="penalty_label[]" class="form-control form-control-sm"></td>
+      <td><input type="text" name="penalty_pattern[]" class="form-control form-control-sm mono" required></td>
+      <td><input type="text" name="penalty_all_of[]" class="form-control form-control-sm mono" placeholder="opcional"></td>
+      <td><input type="number" name="penalty_points[]" class="form-control form-control-sm" value="0"></td>
+      <td><select name="penalty_field[]" class="form-select form-select-sm">
+        <option value="title">title</option><option value="description" selected>description</option><option value="location">location</option>
+      </select></td>
+      <td><select name="penalty_enabled[]" class="form-select form-select-sm">
+        <option value="true" selected>Sí</option><option value="false">No</option>
+      </select></td>
+      <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">✕</button></td>
+    </tr>`,
+    'stack-table': () => `<tr>
+      <td><input type="text" name="stack_name[]" class="form-control form-control-sm"></td>
+      <td><input type="text" name="stack_pattern[]" class="form-control form-control-sm mono"></td>
+      <td><button type="button" class="btn btn-sm btn-outline-danger remove-row">✕</button></td>
+    </tr>`,
+  };
+
+  document.querySelectorAll('[data-add-row]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tableId = btn.dataset.addRow;
+      const tbody = document.querySelector(`#${tableId} tbody`);
+      tbody.insertAdjacentHTML('beforeend', rowTemplates[tableId]());
+    });
+  });
+
+  document.body.addEventListener('click', e => {
+    if (e.target.closest('.remove-row')) {
+      e.target.closest('tr').remove();
+    }
+  });
+
+  document.getElementById('regex-test-btn').addEventListener('click', () => {
+    const pattern = document.getElementById('regex-pattern').value;
+    const sample = document.getElementById('regex-sample').value;
+    const resultEl = document.getElementById('regex-result');
+    resultEl.textContent = 'Probando...';
+    fetch('/config/regex-test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pattern, sample }),
+    }).then(r => r.json()).then(data => {
+      if (!data.ok) {
+        resultEl.innerHTML = `<span class="text-danger">${data.error}</span>`;
+      } else if (data.match) {
+        resultEl.innerHTML = `<span class="text-success">Coincide ✓</span>`;
+      } else {
+        resultEl.innerHTML = `<span class="text-muted">No coincide</span>`;
+      }
+    }).catch(() => { resultEl.innerHTML = `<span class="text-danger">Error al probar.</span>`; });
+  });
+
+  const testBtn = document.getElementById('test-telegram-btn');
+  if (testBtn) {
+    testBtn.addEventListener('click', () => {
+      const resultEl = document.getElementById('test-telegram-result');
+      resultEl.textContent = 'Enviando...';
+      fetch('/notifications/test', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          resultEl.innerHTML = data.ok
+            ? '<span class="text-success">Mensaje enviado ✓</span>'
+            : '<span class="text-danger">No se pudo enviar. Revisa el token y chat ID.</span>';
+        })
+        .catch(() => { resultEl.innerHTML = '<span class="text-danger">Error de red.</span>'; });
+    });
+  }
+</script>
+{% endblock %}

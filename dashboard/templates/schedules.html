@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Horarios — Job Hunter{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 820px;">
+
+  <h4 class="mb-1">Horarios</h4>
+  <p class="text-muted small mb-4">
+    Corridas automáticas. Se ejecutan mientras el dashboard esté corriendo — instala la tarea de
+    arranque abajo para que se abra solo al iniciar sesión en Windows.
+  </p>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h6 class="mb-1">Arranque automático del dashboard</h6>
+        <p class="hint mb-0">
+          {% if task_installed %}
+            <span class="text-success">● Instalada</span> — el dashboard se abrirá al iniciar sesión en Windows.
+          {% else %}
+            <span class="text-muted">○ No instalada</span> — los horarios solo corren con el dashboard abierto.
+          {% endif %}
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        {% if task_installed %}
+        <form method="POST" action="/task/uninstall">
+          <button type="submit" class="btn btn-outline-danger btn-sm">Desinstalar</button>
+        </form>
+        {% else %}
+        <form method="POST" action="/task/install">
+          <button type="submit" class="btn btn-outline-success btn-sm">Instalar</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Nuevo horario</h6>
+      <form method="POST" action="/schedules/create">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Nombre</label>
+            <input type="text" name="name" class="form-control" placeholder="Corrida matutina" required>
+          </div>
+          <div class="col-sm-3">
+            <label class="form-label small fw-semibold">Modo</label>
+            <select name="mode" class="form-select">
+              <option value="daily">diario</option>
+              <option value="initial">inicial (30 días)</option>
+            </select>
+          </div>
+          <div class="col-sm-3">
+            <label class="form-label small fw-semibold">Hora (24h)</label>
+            <input type="time" name="time" class="form-control" value="06:30" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold d-block">Días</label>
+            {% for code, label in [('mon','Lun'),('tue','Mar'),('wed','Mié'),('thu','Jue'),('fri','Vie'),('sat','Sáb'),('sun','Dom')] %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" name="days_of_week" value="{{ code }}"
+                     id="day-{{ code }}" {% if code in ['mon','tue','wed','thu','fri'] %}checked{% endif %}>
+              <label class="form-check-label small" for="day-{{ code }}">{{ label }}</label>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="notify" id="notify" checked>
+              <label class="form-check-label small" for="notify">Enviar notificaciones de Telegram en esta corrida</label>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm mt-3">Crear horario</button>
+      </form>
+    </div>
+  </div>
+
+  {% if schedules %}
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table mb-0 align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>Nombre</th><th>Modo</th><th>Días</th><th>Hora</th>
+            <th>Próxima corrida</th><th style="width:200px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in schedules %}
+          <tr>
+            <td>
+              {{ s.name }}
+              {% if not s.enabled %}<span class="badge bg-secondary ms-1">pausado</span>{% endif %}
+            </td>
+            <td><span class="badge bg-{{ 'primary' if s.mode == 'daily' else 'secondary' }}">{{ s.mode }}</span></td>
+            <td class="small">{{ s.days_of_week | join(', ') }}</td>
+            <td>{{ s.time }}</td>
+            <td class="small text-muted">
+              {% if s.enabled and next_runs.get(s.id) %}
+                {{ next_runs[s.id].strftime("%d/%m %H:%M") }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>
+              <div class="d-flex gap-1 justify-content-end">
+                <form method="POST" action="/schedules/{{ s.id }}/toggle">
+                  <button type="submit" class="btn btn-outline-secondary btn-sm">
+                    {{ 'Reanudar' if not s.enabled else 'Pausar' }}
+                  </button>
+                </form>
+                <form method="POST" action="/schedules/{{ s.id }}/delete"
+                      onsubmit="return confirm('¿Eliminar el horario {{ s.name }}?')">
+                  <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="text-center text-muted py-5">
+    <div style="font-size:3rem">🗓️</div>
+    <p class="mt-2">Aún no hay horarios configurados.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

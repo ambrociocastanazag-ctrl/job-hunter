@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Historial — Job Hunter{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 980px;">
+
+  <h4 class="mb-1">Ejecutar y revisar corridas</h4>
+  <p class="text-muted small mb-4">Lanza una corrida manual con la configuración actual, o personalízala para esta vez.</p>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-3">
+          <label class="form-label small fw-semibold">Modo</label>
+          <select id="run-mode" class="form-select form-select-sm">
+            <option value="daily">diario</option>
+            <option value="initial">inicial (30 días)</option>
+          </select>
+        </div>
+        <div class="col-sm-3">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#customize">
+            Personalizar esta corrida
+          </button>
+        </div>
+        <div class="col-sm-6 d-flex justify-content-end gap-2">
+          <button type="button" id="start-btn" class="btn btn-primary btn-sm">Ejecutar ahora</button>
+          <button type="button" id="cancel-btn" class="btn btn-outline-danger btn-sm d-none">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="collapse mt-3" id="customize">
+        <div class="row g-3">
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Sitios (vacío = usar configuración)</label>
+            {% for value, label in [('linkedin','LinkedIn'), ('indeed','Indeed'), ('glassdoor','Glassdoor')] %}
+            <div class="form-check">
+              <input class="form-check-input run-site" type="checkbox" value="{{ value }}" id="run-site-{{ value }}">
+              <label class="form-check-label small" for="run-site-{{ value }}">{{ label }}</label>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Keywords (uno por línea, vacío = usar configuración)</label>
+            <textarea id="run-keywords" class="form-control form-control-sm mono" rows="4"></textarea>
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label small fw-semibold">Localizaciones (uno por línea)</label>
+            <textarea id="run-locations" class="form-control form-control-sm mono" rows="4"></textarea>
+          </div>
+          <div class="col-sm-3">
+            <label class="form-label small fw-semibold">Resultados por combinación</label>
+            <input type="number" id="run-results" class="form-control form-control-sm" min="1" placeholder="{{ search.results_wanted }}">
+          </div>
+          <div class="col-sm-3">
+            <label class="form-label small fw-semibold">Horas atrás</label>
+            <input type="number" id="run-hours" class="form-control form-control-sm" min="1" placeholder="según modo">
+          </div>
+          <div class="col-sm-6 d-flex align-items-end">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="run-no-notify">
+              <label class="form-check-label small" for="run-no-notify">No enviar notificaciones de Telegram</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="run-error" class="text-danger small mt-2"></div>
+
+      <div id="console-wrap" class="mt-3 d-none">
+        <div id="console"></div>
+      </div>
+    </div>
+  </div>
+
+  <h5 class="mb-3">Historial de ejecuciones</h5>
+  {% if runs %}
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>Fecha</th>
+            <th class="text-center">Modo</th>
+            <th class="text-center">Origen</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Encontradas</th>
+            <th class="text-center">Nuevas</th>
+            <th class="text-center">Errores</th>
+            <th class="text-center">Duración</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for run in runs %}
+          <tr>
+            <td><span class="fw-semibold">{{ run.started_at.strftime("%d/%m/%Y %H:%M") if run.started_at else "—" }}</span></td>
+            <td class="text-center">
+              <span class="badge bg-{{ 'secondary' if run.mode == 'initial' else 'primary' }}">{{ run.mode }}</span>
+            </td>
+            <td class="text-center small text-muted">{{ run.trigger }}</td>
+            <td class="text-center">
+              <span class="badge status-badge-{{ run.status }}">{{ run.status }}</span>
+            </td>
+            <td class="text-center">{{ run.total_found }}</td>
+            <td class="text-center">
+              {% if run.new_count > 0 %}
+                <span class="text-success fw-semibold">+{{ run.new_count }}</span>
+              {% else %}
+                <span class="text-muted">0</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if run.error_count > 0 %}
+                <span class="badge bg-danger">{{ run.error_count }}</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-center text-muted small">
+              {% if run.duration_s is not none %}
+                {% if run.duration_s >= 60 %}{{ (run.duration_s // 60) }}m {{ run.duration_s % 60 }}s{% else %}{{ run.duration_s }}s{% endif %}
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="text-center text-muted py-5">
+    <div style="font-size:3rem">📋</div>
+    <p class="mt-2">Aún no hay runs registrados.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+  const startBtn = document.getElementById('start-btn');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const consoleWrap = document.getElementById('console-wrap');
+  const consoleEl = document.getElementById('console');
+  const errorEl = document.getElementById('run-error');
+  let offset = 0;
+  let pollTimer = null;
+
+  function lines(text) {
+    return text.split('\n').map(s => s.trim()).filter(Boolean);
+  }
+
+  function setRunningUI(running) {
+    startBtn.disabled = running;
+    cancelBtn.classList.toggle('d-none', !running);
+    consoleWrap.classList.toggle('d-none', !running && consoleEl.textContent === '');
+  }
+
+  function appendLines(newLines) {
+    if (!newLines.length) return;
+    consoleEl.textContent += (consoleEl.textContent ? '\n' : '') + newLines.join('\n');
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  function poll() {
+    fetch(`/runs/log?offset=${offset}`).then(r => r.json()).then(data => {
+      appendLines(data.lines);
+      offset = data.next_offset;
+      if (data.running) {
+        pollTimer = setTimeout(poll, 1500);
+      } else {
+        setRunningUI(false);
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    }).catch(() => { pollTimer = setTimeout(poll, 3000); });
+  }
+
+  function checkInitialStatus() {
+    fetch('/runs/status').then(r => r.json()).then(data => {
+      if (data.running) {
+        consoleEl.textContent = '';
+        offset = 0;
+        setRunningUI(true);
+        poll();
+      }
+    });
+  }
+
+  startBtn.addEventListener('click', () => {
+    errorEl.textContent = '';
+    const body = {
+      mode: document.getElementById('run-mode').value,
+      sites: Array.from(document.querySelectorAll('.run-site:checked')).map(el => el.value),
+      keywords: lines(document.getElementById('run-keywords').value),
+      locations: lines(document.getElementById('run-locations').value),
+      results_wanted: document.getElementById('run-results').value || null,
+      hours_old: document.getElementById('run-hours').value || null,
+      no_notify: document.getElementById('run-no-notify').checked,
+    };
+    startBtn.disabled = true;
+    fetch('/runs/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(r => r.json().then(data => ({ ok: r.ok, data }))).then(({ ok, data }) => {
+      if (!ok || !data.ok) {
+        errorEl.textContent = data.error || 'No se pudo iniciar la corrida.';
+        startBtn.disabled = false;
+        return;
+      }
+      consoleEl.textContent = '';
+      offset = 0;
+      consoleWrap.classList.remove('d-none');
+      setRunningUI(true);
+      poll();
+    }).catch(() => {
+      errorEl.textContent = 'Error de red al iniciar la corrida.';
+      startBtn.disabled = false;
+    });
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    cancelBtn.disabled = true;
+    fetch('/runs/cancel', { method: 'POST' }).finally(() => { cancelBtn.disabled = false; });
+  });
+
+  checkInitialStatus();
+</script>
+{% endblock %}

@@ -6,7 +6,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.xlsx
 *.db
 venv/
 .venv/

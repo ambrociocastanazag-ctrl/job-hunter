@@ -1,0 +1,33 @@
+search:
+  locations:
+  - Remote
+  - Colombia
+  - Mexico
+  - worldwide
+  - United States
+  keywords:
+  - Python Developer
+  - Python Backend Developer
+  - Django Developer
+  - Backend Developer Python
+  - Junior Python Developer
+  - Full Stack Python
+  - Python Engineer
+  - Software Engineer Python
+  - Desarrollador Python
+  - Programador Python
+  - Desarrollador Django
+  - Desarrollador Backend
+  bonus_skills:
+  - Django
+  - PostgreSQL
+  - Docker
+  - pytest
+  - React
+  - HTML
+  - CSS
+  job_types:
+  - fulltime
+  - internship
+filters:
+  min_score_to_save: 25

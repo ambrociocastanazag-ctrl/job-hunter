@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Job Hunter{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar mb-4">
+  <div class="container-fluid">
+    <span class="navbar-brand">Job Hunter</span>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="/" class="btn btn-outline-light btn-sm {% if active_nav == 'dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="/config" class="btn btn-outline-light btn-sm {% if active_nav == 'config' %}active{% endif %}">Configuración</a>
+      <a href="/config/advanced" class="btn btn-outline-light btn-sm {% if active_nav == 'advanced' %}active{% endif %}">Avanzado</a>
+      <a href="/schedules" class="btn btn-outline-light btn-sm {% if active_nav == 'schedules' %}active{% endif %}">Horarios</a>
+      <a href="/runs" class="btn btn-outline-light btn-sm {% if active_nav == 'runs' %}active{% endif %}">Historial</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+{% block content %}{% endblock %}
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

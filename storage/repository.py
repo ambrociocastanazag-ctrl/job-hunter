@@ -125,10 +125,104 @@ def get_pipeline_jobs() -> pd.DataFrame:
     return pd.DataFrame(data) if data else pd.DataFrame()
 
 
-def save_search_run(run: SearchRun) -> None:
+def update_job_scores(scores: dict) -> int:
+    """Bulk-update scores. scores = {job_id: new_score}. Returns count updated."""
+    with get_session() as s:
+        for job_id, score in scores.items():
+            s.execute(update(Job).where(Job.id == job_id).values(score=int(score)))
+        s.commit()
+    return len(scores)
+
+
+def upsert_status(job_id: int, status: str) -> bool:
+    """Create or update the Application record for a job. Returns True on success."""
+    with get_session() as s:
+        app = s.execute(
+            select(Application).where(Application.job_id == job_id)
+        ).scalar_one_or_none()
+        if app:
+            app.status = status
+        else:
+            app = Application(job_id=job_id, status=status)
+            s.add(app)
+        s.commit()
+    return True
+
+
+def create_search_run(run: SearchRun) -> int:
+    """Persists a SearchRun at the start of a run (status='running'). Returns its id."""
     with get_session() as s:
         s.add(run)
         s.commit()
+        return run.id
+
+
+def update_search_run(run_id: int, **fields) -> None:
+    """Generic partial update. None-valued kwargs are ignored."""
+    values = {k: v for k, v in fields.items() if v is not None}
+    if not values:
+        return
+    with get_session() as s:
+        s.execute(update(SearchRun).where(SearchRun.id == run_id).values(**values))
+        s.commit()
+
+
+def finish_search_run(
+    run_id: int,
+    finished_at,
+    total_found: int = 0,
+    new_count: int = 0,
+    error_count: int = 0,
+    status: str = "ok",
+) -> None:
+    update_search_run(
+        run_id,
+        finished_at=finished_at,
+        total_found=total_found,
+        new_count=new_count,
+        error_count=error_count,
+        status=status,
+    )
+
+
+def get_search_run(run_id: int) -> dict | None:
+    with get_session() as s:
+        run = s.get(SearchRun, run_id)
+        return _run_to_dict(run) if run else None
+
+
+def get_running_search_run() -> dict | None:
+    with get_session() as s:
+        run = s.execute(
+            select(SearchRun).where(SearchRun.status == "running").order_by(SearchRun.started_at.desc())
+        ).scalars().first()
+        return _run_to_dict(run) if run else None
+
+
+def get_search_runs(limit: int = 30) -> list[dict]:
+    with get_session() as s:
+        runs = s.execute(
+            select(SearchRun).order_by(SearchRun.started_at.desc()).limit(limit)
+        ).scalars().all()
+        return [_run_to_dict(r) for r in runs]
+
+
+def _run_to_dict(r: SearchRun) -> dict:
+    return {
+        "id": r.id,
+        "started_at": r.started_at,
+        "finished_at": r.finished_at,
+        "total_found": r.total_found or 0,
+        "new_count": r.new_count or 0,
+        "error_count": r.error_count or 0,
+        "hours_old": (r.params_json or {}).get("hours_old", "—"),
+        "mode": r.mode or "daily",
+        "trigger": r.trigger or "cli",
+        "status": r.status or "ok",
+        "log_path": r.log_path,
+        "duration_s": int((r.finished_at - r.started_at).total_seconds())
+                      if r.finished_at and r.started_at else None,
+    }
 
 
 def _job_to_dict(job: Job) -> dict:

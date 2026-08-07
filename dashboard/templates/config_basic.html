@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Configuración — Job Hunter{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 820px;">
+
+  <h4 class="mb-1">Configuración</h4>
+  <p class="text-muted small mb-4">
+    Qué buscar y qué tan estricto ser. Para expresiones regulares, pesos de scoring y
+    parámetros de ejecución, ve a <a href="/config/advanced">Avanzado</a>.
+  </p>
+
+  <form method="POST">
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="card-title mb-3">Modalidad y jornada</h6>
+        <div class="row">
+          <div class="col-sm-6">
+            <p class="hint mb-2">Modalidad de trabajo</p>
+            {% for value, label in [('remote','Remoto'), ('hybrid','Híbrido'), ('onsite','Presencial')] %}
+            <div class="form-check">
+              <input class="form-check-input combo-input" type="checkbox" name="work_modes" value="{{ value }}"
+                     id="wm-{{ value }}" {% if value in search.work_modes %}checked{% endif %}>
+              <label class="form-check-label" for="wm-{{ value }}">{{ label }}</label>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="col-sm-6">
+            <p class="hint mb-2">Tipo de jornada (vacío = sin filtro)</p>
+            {% for value, label in [('fulltime','Tiempo completo'), ('parttime','Medio tiempo'), ('internship','Prácticas'), ('contract','Contrato')] %}
+            <div class="form-check">
+              <input class="form-check-input combo-input" type="checkbox" name="job_types" value="{{ value }}"
+                     id="jt-{{ value }}" {% if value in search.job_types %}checked{% endif %}>
+              <label class="form-check-label" for="jt-{{ value }}">{{ label }}</label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="card-title mb-2">Sitios</h6>
+        <div class="d-flex gap-3 flex-wrap">
+          {% for value, label in [('linkedin','LinkedIn'), ('indeed','Indeed'), ('glassdoor','Glassdoor')] %}
+          <div class="form-check">
+            <input class="form-check-input combo-input" type="checkbox" name="sites" value="{{ value }}"
+                   id="site-{{ value }}" {% if value in search.sites %}checked{% endif %}>
+            <label class="form-check-label" for="site-{{ value }}">{{ label }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="card-title mb-1">Keywords de búsqueda</h6>
+        <p class="hint mb-2">Un keyword por línea.</p>
+        <textarea name="keywords" id="keywords" class="form-control mono combo-input" rows="10">{{ keywords }}</textarea>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="card-title mb-1">Localizaciones</h6>
+        <p class="hint mb-2">
+          Una por línea. LinkedIn acepta strings libres. Indeed/Glassdoor solo aceptan
+          países en inglés o <code>worldwide</code>.
+        </p>
+        <textarea name="locations" id="locations" class="form-control mono combo-input" rows="5">{{ locations }}</textarea>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <p class="small text-muted mb-0">
+          ≈ <strong id="combo-count">—</strong> combinaciones por corrida
+          (sitios × keywords × localizaciones × tipos de jornada).
+        </p>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="card-title mb-1">Habilidades preferidas</h6>
+        <p class="hint mb-2">
+          Una por línea. Cada habilidad encontrada en el JD suma puntos al score (ver tope en Avanzado).
+        </p>
+        <textarea name="bonus_skills" class="form-control mono" rows="8">{{ bonus_skills }}</textarea>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="card-title mb-3">Umbrales</h6>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Score mínimo para guardar</label>
+            <input type="number" name="min_score_to_save" class="form-control" min="0" max="100"
+                   value="{{ min_score_to_save }}">
+            <p class="hint mt-1 mb-0">Vacantes con score menor no se guardan en la base de datos.</p>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Score "caliente"</label>
+            <input type="number" name="score_hot" class="form-control" min="0" max="100"
+                   value="{{ score_hot }}">
+            <p class="hint mt-1 mb-0">A partir de este score se envía alerta inmediata por Telegram.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="card-title mb-3">Notificaciones</h6>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="digest_enabled" id="digest_enabled"
+                 {% if notifications.digest_enabled %}checked{% endif %}>
+          <label class="form-check-label" for="digest_enabled">Enviar digest diario por Telegram</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="hot_alerts_enabled" id="hot_alerts_enabled"
+                 {% if notifications.hot_alerts_enabled %}checked{% endif %}>
+          <label class="form-check-label" for="hot_alerts_enabled">Enviar alerta inmediata para vacantes calientes</label>
+        </div>
+        <p class="hint mt-2 mb-0">El token y chat ID de Telegram se configuran en <a href="/config/advanced">Avanzado</a>.</p>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h6 class="card-title mb-3">Perfil</h6>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Nombre</label>
+            <input type="text" name="name" class="form-control" value="{{ profile.name or '' }}">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Nivel</label>
+            <select name="level" class="form-select">
+              {% for lvl in ['junior','mid','senior'] %}
+              <option value="{{ lvl }}" {% if profile.level == lvl %}selected{% endif %}>{{ lvl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Ubicación</label>
+            <input type="text" name="location" class="form-control" value="{{ profile.location or '' }}">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Zona horaria</label>
+            <input type="text" name="timezone" class="form-control" value="{{ profile.timezone or '' }}">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Salario esperado (USD/mes)</label>
+            <input type="number" name="salary" class="form-control" min="0"
+                   value="{{ profile.salary_expectation_usd_monthly or '' }}">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Idiomas</label>
+            <textarea name="languages" class="form-control" rows="2">{{ languages }}</textarea>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Stack principal</label>
+            <textarea name="stack_primary" class="form-control mono" rows="4">{{ stack_primary }}</textarea>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label small fw-semibold">Stack secundario</label>
+            <textarea name="stack_secondary" class="form-control mono" rows="4">{{ stack_secondary }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+      <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      <a href="/" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+
+  <hr class="my-4">
+
+  <div class="card border-0 shadow-sm p-3 mb-4">
+    <h6 class="mb-1">Re-scorear toda la base de datos</h6>
+    <p class="hint mb-3">
+      Recalcula el score de todas las vacantes usando las reglas y habilidades actuales.
+      Útil después de agregar o quitar skills o reglas.
+    </p>
+    <form method="POST" action="/rescore"
+          onsubmit="return confirm('¿Re-scorear todas las vacantes? Esto puede tardar unos segundos.')">
+      <button type="submit" class="btn btn-warning btn-sm">Aplicar a toda la DB</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+  function countLines(text) {
+    return text.split('\n').map(s => s.trim()).filter(Boolean).length;
+  }
+  function updateComboCount() {
+    const sites = document.querySelectorAll('input[name="sites"]:checked').length || 1;
+    const jobTypes = document.querySelectorAll('input[name="job_types"]:checked').length || 1;
+    const keywords = countLines(document.getElementById('keywords').value) || 1;
+    const locations = countLines(document.getElementById('locations').value) || 1;
+    document.getElementById('combo-count').textContent = sites * jobTypes * keywords * locations;
+  }
+  document.querySelectorAll('.combo-input').forEach(el => {
+    el.addEventListener('input', updateComboCount);
+    el.addEventListener('change', updateComboCount);
+  });
+  updateComboCount();
+</script>
+{% endblock %}

@@ -1,6 +1,7 @@
 import os
 from datetime import date
 import pandas as pd
+from config.settings import get_settings
 from storage.repository import get_new_jobs
 from utils.logger import get_logger
 
@@ -9,8 +10,9 @@ logger = get_logger(__name__)
 EXPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "exports")
 
 
-def export_digest(run_date: date | None = None, top_n: int = 10) -> str:
+def export_digest(run_date: date | None = None, top_n: int | None = None) -> str:
     run_date = run_date or date.today()
+    top_n = top_n if top_n is not None else get_settings()["notifications"]["digest_top_n"]
     os.makedirs(EXPORTS_DIR, exist_ok=True)
     filepath = os.path.join(EXPORTS_DIR, f"daily_digest_{run_date.isoformat()}.md")
 

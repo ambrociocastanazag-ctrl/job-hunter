@@ -1,8 +1,9 @@
 import time
 import random
-from config.settings import REQUEST_DELAY_MIN, REQUEST_DELAY_MAX
+from config.settings import get_settings
 
 
 def polite_sleep():
-    delay = random.uniform(REQUEST_DELAY_MIN, REQUEST_DELAY_MAX)
+    runtime_cfg = get_settings()["runtime"]
+    delay = random.uniform(runtime_cfg["request_delay_min"], runtime_cfg["request_delay_max"])
     time.sleep(delay)

@@ -4,30 +4,18 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-SCORE_RULES: list[tuple[str, int, str]] = [
-    # (pattern, points, field)
-    (r"\bdjango\b|\bfastapi\b", 30, "description"),
-    (r"\bjunior\b|\bentry[\s-]level\b", 20, "title"),
-    (r"\bpostgresql\b|\bpostgres\b", 10, "description"),   # +5 bonus si ya tiene Python
-    (r"\blatin america\b|\blatam\b|\bamericas timezone\b|\blatam.friendly\b", 15, "description"),
-    (r"\blatam\b|\blatin america\b", 15, "location"),
-    (r"\bdocker\b", 10, "description"),
-    (r"\bpytest\b|\bunit test", 5, "description"),
-    (r"\bjunior\b|\bentry[\s-]level\b", 10, "description"),
-]
 
-PENALTY_RULES: list[tuple[str, int, str]] = [
-    (r"3\+?\s*years?\s*(of\s*)?(experience|exp)", -20, "description"),
-    (r"3\s*-\s*[4-9]\s*years?\s*(of\s*)?(experience|exp)", -20, "description"),
-    (r"\bgo\b|\bgolang\b", -15, "description"),
-    (r"\brust\b", -15, "description"),
-    (r"\bkubernetes\b|\bk8s\b", -10, "description"),
-    (r"\bjava\b(?!script)", -10, "description"),
-    (r"\bscala\b|\bkotlin\b", -10, "description"),
-]
+def _rule_matches(rule: dict, field_map: dict) -> bool:
+    field_text = field_map.get(rule["field"], "")
+    if not re.search(rule["pattern"], field_text, re.IGNORECASE):
+        return False
+    for extra_pattern in rule.get("all_of", []) or []:
+        if not re.search(extra_pattern, field_text, re.IGNORECASE):
+            return False
+    return True
 
 
-def _compute_score(row: pd.Series) -> int:
+def _compute_score(row: pd.Series, bonus_skills: list[str], scoring_cfg: dict) -> int:
     score = 0
     title = str(row.get("title", "")).lower()
     desc = str(row.get("description", "")).lower()
@@ -35,28 +23,42 @@ def _compute_score(row: pd.Series) -> int:
 
     field_map = {"title": title, "description": desc, "location": location}
 
-    for pattern, pts, field in SCORE_RULES:
-        text = field_map.get(field, "")
-        if re.search(pattern, text, re.IGNORECASE):
-            score += pts
+    for rule in scoring_cfg["rules"]:
+        if not rule.get("enabled", True):
+            continue
+        if _rule_matches(rule, field_map):
+            score += rule["points"]
 
-    # PostgreSQL + Python bonus
-    if re.search(r"\bpostgresql\b|\bpostgres\b", desc, re.IGNORECASE) and re.search(r"\bpython\b", desc, re.IGNORECASE):
-        score += 5
-
-    for pattern, pts, field in PENALTY_RULES:
-        text = field_map.get(field, "")
-        if re.search(pattern, text, re.IGNORECASE):
-            score += pts  # pts is negative
+    for rule in scoring_cfg["penalties"]:
+        if not rule.get("enabled", True):
+            continue
+        if _rule_matches(rule, field_map):
+            score += rule["points"]
 
     if row.get("is_remote"):
-        score += 5
+        score += scoring_cfg["remote_bonus"]
+
+    skill_bonus = 0
+    cap = scoring_cfg["bonus_skill_cap"]
+    points_per_skill = scoring_cfg["bonus_skill_points"]
+    for skill in bonus_skills:
+        if skill_bonus >= cap:
+            break
+        if re.search(re.escape(skill), desc, re.IGNORECASE):
+            skill_bonus += points_per_skill
+    score += skill_bonus
 
     return max(0, min(100, score))
 
 
-def score_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+def score_dataframe(df: pd.DataFrame, bonus_skills: list[str] | None = None) -> pd.DataFrame:
+    from config.settings import get_settings
+    settings = get_settings()
+    if bonus_skills is None:
+        bonus_skills = settings["search"]["bonus_skills"]
+    scoring_cfg = settings["scoring"]
+
     df = df.copy()
-    df["score"] = df.apply(_compute_score, axis=1)
-    logger.info(f"Scored {len(df)} jobs. Score distribution: mean={df['score'].mean():.1f}, max={df['score'].max()}")
+    df["score"] = df.apply(lambda row: _compute_score(row, bonus_skills, scoring_cfg), axis=1)
+    logger.info(f"Scored {len(df)} jobs. mean={df['score'].mean():.1f}, max={df['score'].max()}")
     return df

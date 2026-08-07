@@ -67,3 +67,8 @@ class SearchRun(Base):
     new_count = Column(Integer, default=0)
     error_count = Column(Integer, default=0)
     params_json = Column(JSON, default=dict)
+
+    mode = Column(String(20), default="daily")
+    trigger = Column(String(20), default="cli")  # manual | schedule | cli
+    status = Column(String(20), default="ok")    # running | ok | failed | cancelled
+    log_path = Column(Text, nullable=True)

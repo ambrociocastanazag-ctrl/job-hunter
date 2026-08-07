@@ -23,6 +23,8 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 def init_db():
     os.makedirs(os.path.join(_BASE_DIR, "data"), exist_ok=True)
     Base.metadata.create_all(bind=engine)
+    from storage.migrations import run_migrations
+    run_migrations(engine)
     logger.info("Database initialized.")
 
 
