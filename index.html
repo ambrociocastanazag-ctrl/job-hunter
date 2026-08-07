@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Hunter — Guía de instalación</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primary: #003d9b;
+    --color-primary-container: #0052cc;
+    --color-secondary: #006c47;
+    --color-secondary-container: #82f9be;
+    --color-on-secondary-container: #00734c;
+    --color-tertiary: #7d5200;
+    --color-tertiary-container: #ffca81;
+    --color-error: #ba1a1a;
+    --color-error-container: #ffdad6;
+    --color-on-error-container: #93000a;
+    --color-background: #f9f9ff;
+    --color-on-background: #091c35;
+    --color-surface: #ffffff;
+    --color-surface-container-low: #f0f3ff;
+    --color-surface-container: #e7eeff;
+    --color-surface-container-high: #dfe8ff;
+    --color-on-surface: #091c35;
+    --color-on-surface-variant: #434654;
+    --color-outline-variant: #c3c6d6;
+    --radius-sm: .25rem;
+    --radius-md: .5rem;
+    --radius-lg: .75rem;
+    --radius-full: 9999px;
+    --shadow-1: 0px 4px 8px -2px rgba(0,0,0,.06);
+    --shadow-2: 0px 8px 20px -4px rgba(0,0,0,.10);
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--color-background);
+    color: var(--color-on-background);
+    font-family: var(--font);
+    line-height: 1.6;
+  }
+  a { color: var(--color-primary); }
+
+  header.hero {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
+    color: #fff;
+    padding: 3.5rem 1.5rem 4.5rem;
+    text-align: center;
+  }
+  header.hero .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.3);
+    padding: .35rem .9rem;
+    border-radius: var(--radius-full);
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+  }
+  header.hero h1 {
+    font-size: clamp(2rem, 5vw, 2.9rem);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    margin: 0 0 .75rem;
+  }
+  header.hero p {
+    font-size: 1.1rem;
+    max-width: 640px;
+    margin: 0 auto;
+    color: rgba(255,255,255,.9);
+  }
+
+  main {
+    max-width: 820px;
+    margin: -2.5rem auto 4rem;
+    padding: 0 1.5rem;
+  }
+
+  .card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-1);
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .prereqs { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; }
+  .prereq { display: flex; align-items: center; gap: .75rem; }
+  .prereq .icon {
+    width: 40px; height: 40px; border-radius: var(--radius-md);
+    background: var(--color-surface-container-low);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; flex-shrink: 0;
+  }
+  .prereq strong { display: block; font-size: .92rem; }
+  .prereq span { font-size: .8rem; color: var(--color-on-surface-variant); }
+
+  .steps { counter-reset: step; }
+  .step {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 1.25rem;
+    padding: 1.75rem 0;
+    border-top: 1px solid var(--color-outline-variant);
+  }
+  .step:first-child { border-top: none; padding-top: .25rem; }
+  .step-number {
+    counter-increment: step;
+    width: 44px; height: 44px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-container-low);
+    color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1.1rem;
+  }
+  .step-number::before { content: counter(step); }
+  .step h2 { font-size: 1.15rem; margin: .3rem 0 .4rem; }
+  .step p { margin: 0 0 .75rem; color: var(--color-on-surface-variant); font-size: .95rem; }
+  .step p:last-child { margin-bottom: 0; }
+
+  .platform-tabs { display: flex; gap: .5rem; margin-bottom: .5rem; }
+  .platform-tab {
+    font-size: .75rem; font-weight: 600; padding: .25rem .7rem;
+    border-radius: var(--radius-full); background: var(--color-surface-container);
+    color: var(--color-on-surface-variant);
+  }
+
+  pre {
+    position: relative;
+    background: var(--color-on-background);
+    color: #e7eeff;
+    border-radius: var(--radius-md);
+    padding: 1rem 3rem 1rem 1.1rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: .82rem;
+    line-height: 1.55;
+    margin: 0 0 .5rem;
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+  code {
+    font-family: var(--font-mono);
+    background: var(--color-surface-container-low);
+    color: var(--color-primary);
+    padding: .1rem .4rem;
+    border-radius: var(--radius-sm);
+    font-size: .88em;
+  }
+  .copy-btn {
+    position: absolute; top: .6rem; right: .6rem;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.15);
+    color: #e7eeff;
+    border-radius: var(--radius-sm);
+    font-size: .72rem;
+    font-family: var(--font);
+    padding: .3rem .55rem;
+    cursor: pointer;
+    transition: background-color .15s ease;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,.18); }
+  .copy-btn.copied { background: var(--color-secondary); border-color: var(--color-secondary); color: #fff; }
+
+  .callout {
+    display: flex; gap: .75rem;
+    background: var(--color-surface-container-low);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    padding: .85rem 1rem;
+    font-size: .88rem;
+    margin: .75rem 0;
+  }
+  .callout.warn { border-left-color: var(--color-tertiary); background: #fff8ec; }
+  .callout .icon { flex-shrink: 0; }
+
+  .path-tag {
+    display: inline-block;
+    background: var(--color-surface-container);
+    color: var(--color-on-surface-variant);
+    font-family: var(--font-mono);
+    font-size: .78rem;
+    padding: .15rem .5rem;
+    border-radius: var(--radius-sm);
+  }
+
+  ul.checklist { list-style: none; padding: 0; margin: 0; }
+  ul.checklist li { display: flex; gap: .6rem; align-items: flex-start; margin-bottom: .5rem; font-size: .92rem; }
+  ul.checklist li::before {
+    content: "✓";
+    flex-shrink: 0;
+    width: 20px; height: 20px;
+    background: var(--color-secondary-container);
+    color: var(--color-on-secondary-container);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; font-weight: 700;
+    margin-top: .1rem;
+  }
+
+  .done-card {
+    background: linear-gradient(135deg, var(--color-secondary-container) 0%, #eafff3 100%);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    text-align: center;
+    box-shadow: var(--shadow-1);
+  }
+  .done-card .icon { font-size: 2.5rem; margin-bottom: .5rem; }
+  .done-card h2 { color: var(--color-on-secondary-container); margin: 0 0 .4rem; font-size: 1.3rem; }
+  .done-card p { color: #045938; margin: 0; font-size: .95rem; }
+
+  footer {
+    text-align: center;
+    padding: 2rem 1.5rem 3rem;
+    color: var(--color-on-surface-variant);
+    font-size: .85rem;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <span class="eyebrow">🔍 Job Hunter</span>
+  <h1>Guía de instalación</h1>
+  <p>Búsqueda de empleos - Job hunter</p>
+</header>
+
+<main>
+
+  <section class="card">
+    <h2 style="margin-top:0;">Antes de empezar, tienes que tener instalado: </h2>
+    <div class="prereqs">
+      <div class="prereq">
+        <div class="icon">🐍</div>
+        <div><strong>Python 3.12+</strong><span>python.org/downloads</span></div>
+      </div>
+      <div class="prereq">
+        <div class="icon">🔀</div>
+        <div><strong>Git</strong><span>git-scm.com</span></div>
+      </div>
+      <div class="prereq">
+        <div class="icon">🪟</div>
+        <div><strong>Windows</strong><span>scripts .bat/.ps1 son de Windows</span></div>
+      </div>
+      <div class="prereq">
+        <div class="icon">📬</div>
+        <div><strong>Telegram (opcional)</strong><span>para notificaciones</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card steps">
+
+    <div class="step">
+      <div class="step-number"></div>
+      <div>
+        <h2>Clona el repositorio</h2>
+        <p>Esto crea la carpeta <code>job-hunter/</code> con <code>job_hunter/</code> adentro.</p>
+        <pre><code>git clone https://github.com/ambrociocastanazag-ctrl/job-hunter.git
+cd job-hunter/job_hunter</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number"></div>
+      <div>
+        <h2>Crea el entorno virtual</h2>
+        <p>Se crea como carpeta hermana de <span class="path-tag">job_hunter/</span>, así que la activación sube un nivel.</p>
+        <pre><code>python -m venv ../venv
+../venv/Scripts/activate</code></pre>
+        <div class="callout">
+          <span class="icon">💡</span>
+          <span>En Linux/Mac el activador es <code>source ../venv/bin/activate</code>, pero el resto del proyecto (los scripts <code>.bat</code>/<code>.ps1</code> de automatización) es específico de Windows.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number"></div>
+      <div>
+        <h2>Instala las dependencias</h2>
+        <pre><code>pip install -r requirements.txt</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number"></div>
+      <div>
+        <h2>Configura las variables de entorno</h2>
+        <p>Copia la plantilla y edítala. Este archivo solo guarda secretos y ajustes de máquina — nunca la configuración de búsqueda.</p>
+        <pre><code>copy .env.example .env</code></pre>
+        <pre><code>TELEGRAM_BOT_TOKEN=tu_token_aqui
+TELEGRAM_CHAT_ID=tu_chat_id_aqui
+DATABASE_URL=sqlite:///data/jobs.db
+LOG_LEVEL=INFO</code></pre>
+        <div class="callout">
+          <span class="icon">📬</span>
+          <span>
+            ¿Sin bot de Telegram todavía? Escríbele a <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> →
+            <code>/newbot</code> → copia el token. Luego mándale cualquier mensaje a tu bot y visita
+            <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> para obtener tu <code>chat_id</code>.
+            También puedes dejarlo vacío por ahora y configurarlo después desde el dashboard
+            (<strong>Avanzado → Notificaciones</strong>).
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number"></div>
+      <div>
+        <h2>Inicia el dashboard</h2>
+        <pre><code>python dashboard/app.py</code></pre>
+        <p>Deberías ver:</p>
+        <pre><code>Dashboard en http://127.0.0.1:5000
+ * Running on http://127.0.0.1:5000</code></pre>
+        <p>Abre esa URL en tu navegador — ya está escuchando en local.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number"></div>
+      <div>
+        <h2>Configura qué buscar</h2>
+        <p>Todo se ajusta desde la web, sin tocar código:</p>
+        <ul class="checklist">
+          <li><strong>Configuración</strong> — modalidad, sitios, keywords, ubicaciones, habilidades, umbral de score</li>
+          <li><strong>Avanzado</strong> — regex de filtros, pesos de scoring, detección de stack, parámetros de ejecución</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number"></div>
+      <div>
+        <h2>Lanza la primera corrida</h2>
+        <p>La primera corrida trae vacantes de los últimos 30 días. Desde <strong>Historial</strong>, elige modo
+        <em>inicial</em> y pulsa <strong>Ejecutar ahora</strong> — verás el log en vivo.</p>
+        <p>O por línea de comandos, en otra terminal con el entorno activado:</p>
+        <pre><code>python main.py --mode initial</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number"></div>
+      <div>
+        <h2>(Opcional) Automatiza las corridas</h2>
+        <p>Desde <strong>Horarios</strong> puedes crear corridas recurrentes (qué días, qué hora) y, si quieres que
+        el dashboard se abra solo al iniciar sesión en Windows, instalar la tarea de arranque con un botón —
+        sin tocar el Programador de tareas a mano.</p>
+      </div>
+    </div>
+
+  </section>
+
+  <section class="done-card">
+    <div class="icon">🎉</div>
+    <h2>Listo</h2>
+    <p>Job Hunter está corriendo en tu máquina, buscando vacantes con tu configuración.</p>
+  </section>
+
+</main>
+
+<footer>
+  Job Hunter — construido con <a href="https://github.com/Bunsly/JobSpy" target="_blank" rel="noopener">python-jobspy</a>.
+  MIT License.
+</footer>
+
+<script>
+  document.querySelectorAll('pre').forEach(pre => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copiar';
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(pre.innerText).then(() => {
+        btn.textContent = '¡Copiado!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+</script>
+
+</body>
+</html>
