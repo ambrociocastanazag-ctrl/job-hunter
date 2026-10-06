@@ -199,6 +199,21 @@ def get_running_search_run() -> dict | None:
         return _run_to_dict(run) if run else None
 
 
+def close_orphaned_runs() -> int:
+    """Marks as cancelled the dashboard-launched runs left as 'running' by a
+    dashboard that was closed mid-run (closing its window kills the run's
+    subprocess too, so nothing else would ever close the row). CLI runs are
+    left alone: they may legitimately be running in another process."""
+    with get_session() as s:
+        result = s.execute(
+            update(SearchRun)
+            .where(SearchRun.status == "running", SearchRun.trigger != "cli")
+            .values(status="cancelled", finished_at=datetime.now(timezone.utc))
+        )
+        s.commit()
+        return result.rowcount
+
+
 def get_search_runs(limit: int = 30) -> list[dict]:
     with get_session() as s:
         runs = s.execute(
@@ -243,6 +258,7 @@ def _job_to_dict(job: Job) -> dict:
         "score": job.score,
         "stack_detected": job.stack_detected or [],
         "is_new": job.is_new,
+        "is_favorite": bool(job.is_favorite),
         "status": None,
         "applied_at": None,
         "cv_version": None,
@@ -250,3 +266,14 @@ def _job_to_dict(job: Job) -> dict:
         "next_action_at": None,
         "response_at": None,
     }
+
+
+def set_favorite(job_id: int, favorite: bool) -> bool:
+    """Set an explicit value so retries cannot accidentally toggle a favorite."""
+    with get_session() as session:
+        job = session.get(Job, job_id)
+        if job is None:
+            return False
+        job.is_favorite = favorite
+        session.commit()
+    return True

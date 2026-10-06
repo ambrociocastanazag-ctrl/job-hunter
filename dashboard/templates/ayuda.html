@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Ayuda para configurar — Job Hunter{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 820px;">
+
+  <h4 class="mb-1">Configura Job Hunter con ayuda de una IA</h4>
+  <p class="text-muted small mb-4">
+    Una IA te hace unas preguntas sobre el trabajo que buscas y te arma el archivo de configuración.
+    Sirve cualquiera: ChatGPT, Claude, Gemini, Copilot…
+  </p>
+
+  <ol class="help-steps">
+    <li><strong>Copia el prompt</strong><span>con el botón de abajo</span></li>
+    <li><strong>Pégalo en tu IA</strong><span>y responde sus preguntas</span></li>
+    <li><strong>Trae aquí el archivo</strong><span>que te entregue al final</span></li>
+  </ol>
+
+  {% if errors %}
+  <div class="card border-0 shadow-sm mb-4 import-result import-result--error" id="import-result">
+    <div class="card-body">
+      <h6 class="card-title mb-2">No se pudo importar</h6>
+      <ul class="import-errors" id="import-errors">
+        {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+      </ul>
+      <p class="hint mb-2">Copia estos errores, pégaselos a la IA en la misma conversación y pídele el archivo corregido.</p>
+      <button type="button" class="btn btn-outline-primary btn-sm" data-copy-target="import-errors">Copiar errores</button>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if plan %}
+  <div class="card border-0 shadow-sm mb-4 import-result" id="import-result">
+    <div class="card-body">
+      <h6 class="card-title mb-1">Revisa lo que va a cambiar</h6>
+      <p class="hint mb-3">Nada se guarda hasta que pulses <strong>Aplicar</strong>. Lo que no aparece aquí se queda como está.</p>
+      {% for title, lines in plan.summary %}
+      <div class="import-section">
+        <strong>{{ title }}</strong>
+        <ul>{% for line in lines %}<li>{{ line }}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+      {% if plan.warnings %}
+      <div class="alert alert-warning mt-3 mb-0">
+        {% for w in plan.warnings %}<div>{{ w }}</div>{% endfor %}
+      </div>
+      {% endif %}
+      <form method="POST" action="{{ url_for('ayuda_aplicar') }}" class="d-flex gap-2 mt-3">
+        <textarea name="yaml_text" hidden>{{ yaml_text }}</textarea>
+        <button type="submit" class="btn btn-primary">Aplicar configuración</button>
+        <a href="{{ url_for('ayuda') }}" class="btn btn-outline-secondary">Cancelar</a>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+        <h6 class="card-title" style="margin: 0;">El prompt</h6>
+        <button type="button" class="btn btn-primary btn-sm" data-copy-target="prompt-text">Copiar prompt</button>
+      </div>
+      <p class="hint mb-2">Cópialo completo y pégalo como primer mensaje en una conversación nueva con tu IA.</p>
+      <pre class="prompt-box" id="prompt-text" tabindex="0">{{ prompt }}</pre>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Trae el archivo de tu IA</h6>
+      <form method="POST" action="{{ url_for('ayuda_revisar') }}" id="import-form">
+        <label class="dropzone" id="dropzone">
+          <input type="file" accept=".yaml,.yml" id="yaml-file" hidden>
+          <strong>Arrastra aquí <code>jobhunter.yaml</code></strong>
+          <span>o haz clic para elegir el archivo</span>
+        </label>
+        <p class="hint mt-3 mb-2">¿La IA te lo dio como texto? Pégalo aquí:</p>
+        <textarea name="yaml_text" id="yaml-text" class="form-control mono" rows="8"
+                  placeholder="perfil:&#10;  nombre: …">{{ yaml_text if not plan else '' }}</textarea>
+        <button type="submit" class="btn btn-primary mt-3">Revisar</button>
+      </form>
+    </div>
+  </div>
+
+  <p class="hint">¿Prefieres hacerlo a mano? Todo se puede ajustar en <a href="/config">Configuración</a> y <a href="/config/advanced">Avanzado</a>.</p>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.querySelectorAll('[data-copy-target]').forEach(btn => {
+    const label = btn.textContent;
+    btn.addEventListener('click', () => {
+      const text = document.getElementById(btn.dataset.copyTarget).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '¡Copiado!';
+        setTimeout(() => { btn.textContent = label; }, 1600);
+      });
+    });
+  });
+
+  const form = document.getElementById('import-form');
+  const textarea = document.getElementById('yaml-text');
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('yaml-file');
+
+  function loadFile(file) {
+    if (!file) return;
+    file.text().then(text => { textarea.value = text; form.submit(); });
+  }
+  fileInput.addEventListener('change', () => loadFile(fileInput.files[0]));
+  ['dragenter', 'dragover'].forEach(ev => dropzone.addEventListener(ev, e => {
+    e.preventDefault(); dropzone.classList.add('is-over');
+  }));
+  ['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => {
+    e.preventDefault(); dropzone.classList.remove('is-over');
+  }));
+  dropzone.addEventListener('drop', e => loadFile(e.dataTransfer.files[0]));
+
+  const result = document.getElementById('import-result');
+  if (result) result.scrollIntoView({ block: 'start' });
+</script>
+{% endblock %}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Job Hunter — Guía de instalación</title>
+<title>Job Hunter: instalación</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -218,6 +218,10 @@
   .done-card h2 { color: var(--color-on-secondary-container); margin: 0 0 .4rem; font-size: 1.3rem; }
   .done-card p { color: #045938; margin: 0; font-size: .95rem; }
 
+  details.dev summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; }
+  details.dev[open] summary { margin-bottom: .75rem; }
+  details.dev p { color: var(--color-on-surface-variant); font-size: .92rem; }
+
   footer {
     text-align: center;
     padding: 2rem 1.5rem 3rem;
@@ -237,23 +241,19 @@
 <main>
 
   <section class="card">
-    <h2 style="margin-top:0;">Antes de empezar, tienes que tener instalado: </h2>
+    <h2 style="margin-top:0;">Solo necesitas</h2>
     <div class="prereqs">
       <div class="prereq">
-        <div class="icon">🐍</div>
-        <div><strong>Python 3.12+</strong><span>python.org/downloads</span></div>
-      </div>
-      <div class="prereq">
-        <div class="icon">🔀</div>
-        <div><strong>Git</strong><span>git-scm.com</span></div>
-      </div>
-      <div class="prereq">
         <div class="icon">🪟</div>
-        <div><strong>Windows</strong><span>scripts .bat/.ps1 son de Windows</span></div>
+        <div><strong>Windows 10 u 11</strong><span>no hace falta instalar Python ni Git</span></div>
+      </div>
+      <div class="prereq">
+        <div class="icon">🌐</div>
+        <div><strong>Internet</strong><span>la instalación baja unos 100 MB</span></div>
       </div>
       <div class="prereq">
         <div class="icon">📬</div>
-        <div><strong>Telegram (opcional)</strong><span>para notificaciones</span></div>
+        <div><strong>Telegram (opcional)</strong><span>para recibir avisos</span></div>
       </div>
     </div>
   </section>
@@ -263,23 +263,29 @@
     <div class="step">
       <div class="step-number"></div>
       <div>
-        <h2>Clona el repositorio</h2>
-        <p>Esto crea la carpeta <code>job-hunter/</code> con <code>job_hunter/</code> adentro.</p>
-        <pre><code>git clone https://github.com/ambrociocastanazag-ctrl/job-hunter.git
-cd job-hunter/job_hunter</code></pre>
+        <h2>Abre PowerShell</h2>
+        <p>Pulsa la tecla <strong>Windows</strong>, escribe <strong>PowerShell</strong> y pulsa <strong>Enter</strong>.
+        Se abre una ventana para escribir comandos. No hace falta abrirla como administrador.</p>
       </div>
     </div>
 
     <div class="step">
       <div class="step-number"></div>
       <div>
-        <h2>Crea el entorno virtual</h2>
-        <p>Se crea como carpeta hermana de <span class="path-tag">job_hunter/</span>, así que la activación sube un nivel.</p>
-        <pre><code>python -m venv ../venv
-../venv/Scripts/activate</code></pre>
+        <h2>Pega este comando y pulsa Enter</h2>
+        <p>Usa el botón <strong>Copiar</strong> y pega en PowerShell con clic derecho o <code>Ctrl</code>+<code>V</code>.</p>
+        <pre><code>irm https://raw.githubusercontent.com/ambrociocastanazag-ctrl/job-hunter/main/install.ps1 | iex</code></pre>
+        <p>En uno o dos minutos, y sin que tengas que hacer nada más:</p>
+        <ul class="checklist">
+          <li>Descarga Job Hunter en <span class="path-tag">C:\Users\&lt;tu usuario&gt;\JobHunter</span></li>
+          <li>Instala la versión de Python que necesita, solo para Job Hunter (no toca nada más de tu PC)</li>
+          <li>Crea el icono <strong>Job Hunter</strong> en el escritorio y en el menú Inicio</li>
+          <li>Abre Job Hunter por primera vez</li>
+        </ul>
         <div class="callout">
           <span class="icon">💡</span>
-          <span>En Linux/Mac el activador es <code>source ../venv/bin/activate</code>, pero el resto del proyecto (los scripts <code>.bat</code>/<code>.ps1</code> de automatización) es específico de Windows.</span>
+          <span>¿Abriste <strong>CMD</strong> (Símbolo del sistema) en vez de PowerShell? Usa esta versión:
+          <code>powershell -c "irm https://raw.githubusercontent.com/ambrociocastanazag-ctrl/job-hunter/main/install.ps1 | iex"</code></span>
         </div>
       </div>
     </div>
@@ -287,43 +293,14 @@ cd job-hunter/job_hunter</code></pre>
     <div class="step">
       <div class="step-number"></div>
       <div>
-        <h2>Instala las dependencias</h2>
-        <pre><code>pip install -r requirements.txt</code></pre>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-number"></div>
-      <div>
-        <h2>Configura las variables de entorno</h2>
-        <p>Copia la plantilla y edítala. Este archivo solo guarda secretos y ajustes de máquina — nunca la configuración de búsqueda.</p>
-        <pre><code>copy .env.example .env</code></pre>
-        <pre><code>TELEGRAM_BOT_TOKEN=tu_token_aqui
-TELEGRAM_CHAT_ID=tu_chat_id_aqui
-DATABASE_URL=sqlite:///data/jobs.db
-LOG_LEVEL=INFO</code></pre>
+        <h2>Abre Job Hunter cuando quieras</h2>
+        <p>Haz doble clic en el icono <strong>Job Hunter</strong> del escritorio. Se abre una ventana negra
+        (el servidor) y tu navegador en <code>http://127.0.0.1:5000</code>.</p>
         <div class="callout">
-          <span class="icon">📬</span>
-          <span>
-            ¿Sin bot de Telegram todavía? Escríbele a <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> →
-            <code>/newbot</code> → copia el token. Luego mándale cualquier mensaje a tu bot y visita
-            <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> para obtener tu <code>chat_id</code>.
-            También puedes dejarlo vacío por ahora y configurarlo después desde el dashboard
-            (<strong>Avanzado → Notificaciones</strong>).
-          </span>
+          <span class="icon">⏻</span>
+          <span><strong>Cerrar la ventana negra apaga Job Hunter.</strong> Puedes minimizarla mientras lo usas.
+          Si le das doble clic al icono con Job Hunter ya abierto, solo se abre el navegador.</span>
         </div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-number"></div>
-      <div>
-        <h2>Inicia el dashboard</h2>
-        <pre><code>python dashboard/app.py</code></pre>
-        <p>Deberías ver:</p>
-        <pre><code>Dashboard en http://127.0.0.1:5000
- * Running on http://127.0.0.1:5000</code></pre>
-        <p>Abre esa URL en tu navegador — ya está escuchando en local.</p>
       </div>
     </div>
 
@@ -331,10 +308,13 @@ LOG_LEVEL=INFO</code></pre>
       <div class="step-number"></div>
       <div>
         <h2>Configura qué buscar</h2>
-        <p>Todo se ajusta desde la web, sin tocar código:</p>
+        <p>La primera vez te aparece una bienvenida. Lo más fácil es <strong>Ayúdame a configurarlo</strong>:
+        copias un texto, lo pegas en tu IA (ChatGPT, Claude, Gemini…), respondes sus preguntas y arrastras a
+        Job Hunter el archivo que te entregue. Antes de guardar ves un resumen de todo lo que cambia.</p>
+        <p>También puedes ajustar todo a mano, sin tocar código:</p>
         <ul class="checklist">
-          <li><strong>Configuración</strong> — modalidad, sitios, keywords, ubicaciones, habilidades, umbral de score</li>
-          <li><strong>Avanzado</strong> — regex de filtros, pesos de scoring, detección de stack, parámetros de ejecución</li>
+          <li><strong>Configuración</strong>: tu perfil, modalidad, sitios, palabras clave, ubicaciones, habilidades y puntaje mínimo</li>
+          <li><strong>Avanzado</strong>: filtros, pesos del puntaje, detección de tecnologías y parámetros de ejecución</li>
         </ul>
       </div>
     </div>
@@ -342,21 +322,30 @@ LOG_LEVEL=INFO</code></pre>
     <div class="step">
       <div class="step-number"></div>
       <div>
-        <h2>Lanza la primera corrida</h2>
-        <p>La primera corrida trae vacantes de los últimos 30 días. Desde <strong>Historial</strong>, elige modo
-        <em>inicial</em> y pulsa <strong>Ejecutar ahora</strong> — verás el log en vivo.</p>
-        <p>O por línea de comandos, en otra terminal con el entorno activado:</p>
-        <pre><code>python main.py --mode initial</code></pre>
+        <h2>Lanza la primera búsqueda</h2>
+        <p>La primera búsqueda trae vacantes de los últimos 30 días. En <strong>Historial y búsquedas</strong>, elige el modo
+        <em>inicial</em> y pulsa <strong>Ejecutar ahora</strong>. Verás el avance en vivo.</p>
       </div>
     </div>
 
     <div class="step">
       <div class="step-number"></div>
       <div>
-        <h2>(Opcional) Automatiza las corridas</h2>
-        <p>Desde <strong>Horarios</strong> puedes crear corridas recurrentes (qué días, qué hora) y, si quieres que
-        el dashboard se abra solo al iniciar sesión en Windows, instalar la tarea de arranque con un botón —
-        sin tocar el Programador de tareas a mano.</p>
+        <h2>(Opcional) Avisos por Telegram</h2>
+        <p>Escríbele a <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> →
+        <code>/newbot</code> → copia el token. Mándale cualquier mensaje a tu bot y abre
+        <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> para ver tu <code>chat_id</code>.
+        Pon los dos en <strong>Avanzado → Notificaciones</strong>.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number"></div>
+      <div>
+        <h2>(Opcional) Búsquedas automáticas</h2>
+        <p>En <strong>Horarios</strong> eliges qué días y a qué hora buscar. Los horarios corren mientras Job Hunter
+        está abierto. Si quieres que se abra solo al encender la computadora (minimizado, sin abrir el navegador),
+        pulsa <strong>Instalar</strong> en esa misma página.</p>
       </div>
     </div>
 
@@ -367,6 +356,28 @@ LOG_LEVEL=INFO</code></pre>
     <h2>Listo</h2>
     <p>Job Hunter está corriendo en tu máquina, buscando vacantes con tu configuración.</p>
   </section>
+
+  <section class="card" style="margin-top:1.5rem;">
+    <h2 style="margin-top:0;">Actualizar o desinstalar</h2>
+    <p><strong>Actualizar:</strong> cierra la ventana de Job Hunter y vuelve a pegar el mismo comando del paso 2.
+    Tus vacantes, tu configuración y tus credenciales de Telegram se conservan.</p>
+    <p style="margin-bottom:0;"><strong>Desinstalar:</strong> si activaste el inicio automático, desactívalo primero en
+    <strong>Horarios</strong>. Después borra la carpeta <span class="path-tag">C:\Users\&lt;tu usuario&gt;\JobHunter</span>
+    y los iconos <strong>Job Hunter</strong> del escritorio y del menú Inicio. No queda nada más instalado.</p>
+  </section>
+
+  <details class="card dev">
+    <summary>Para desarrolladores: instalación manual</summary>
+    <p>Con <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener">uv</a> y Git. El proyecto necesita
+    Python 3.12, porque python-jobspy fija <code>numpy==1.26.3</code>, que no tiene binarios para 3.13+.</p>
+    <pre><code>git clone https://github.com/ambrociocastanazag-ctrl/job-hunter.git
+cd job-hunter
+uv venv .venv --python 3.12
+uv pip install --python .venv\Scripts\python.exe -r requirements.txt
+.venv\Scripts\python.exe dashboard\app.py</code></pre>
+    <p>Pruebas: <code>.venv\Scripts\python.exe -m pytest tests/ -v</code>. La CLI (<code>main.py --mode daily|initial|export|stats</code>)
+    está documentada en el README.</p>
+  </details>
 
 </main>
 
@@ -381,7 +392,7 @@ LOG_LEVEL=INFO</code></pre>
     btn.className = 'copy-btn';
     btn.textContent = 'Copiar';
     btn.addEventListener('click', () => {
-      navigator.clipboard.writeText(pre.innerText).then(() => {
+      navigator.clipboard.writeText(pre.querySelector('code').innerText).then(() => {
         btn.textContent = '¡Copiado!';
         btn.classList.add('copied');
         setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 1500);

@@ -19,7 +19,7 @@ from config.settings import (
 from config.validation import ValidationError, validate_regex
 from storage.database import init_db
 from storage.repository import (
-    get_pipeline_jobs, upsert_status, get_search_runs, get_search_run, update_job_scores,
+    set_favorite, get_pipeline_jobs, upsert_status, get_search_runs, get_search_run, update_job_scores,
 )
 
 app = Flask(__name__)
@@ -69,6 +69,7 @@ def index():
 
     score_min = request.args.get("score_min", "", type=str)
     is_new = request.args.get("is_new", "")
+    favorites = request.args.get("favorites", "") == "1"
     status_filter = request.args.get("status", "")
     q = request.args.get("q", "").strip().lower()
     page = request.args.get("page", 1, type=int)
@@ -78,7 +79,7 @@ def index():
     if df.empty:
         return render_template(
             "index.html", jobs=[], stats=_empty_stats(),
-            filters=_filters(score_min, is_new, status_filter, q),
+            filters=_filters(score_min, is_new, status_filter, q, favorites),
             statuses=statuses, page=1, total_pages=1, total_count=0,
             score_hot=score_hot, active_nav="dashboard",
         )
@@ -90,6 +91,8 @@ def index():
         "applied": int((df["status"].notna() & (df["status"] != "Pendiente")).sum()),
     }
 
+    if favorites:
+        df = df[df["is_favorite"] == True]
     if score_min != "":
         df = df[df["score"] >= int(score_min)]
     if is_new:
@@ -124,6 +127,7 @@ def index():
             "location": row.get("location", ""),
             "is_remote": row.get("is_remote", False),
             "is_new": row.get("is_new", False),
+            "is_favorite": bool(row.get("is_favorite", False)),
             "stack": stack[:6],
             "job_url": row.get("job_url", ""),
             "posted": _fmt_date(posted),
@@ -136,10 +140,20 @@ def index():
     return render_template(
         "index.html",
         jobs=jobs, stats=stats,
-        filters=_filters(score_min, is_new, status_filter, q),
+        filters=_filters(score_min, is_new, status_filter, q, favorites),
         statuses=statuses, page=page, total_pages=total_pages, total_count=total_count,
         score_hot=score_hot, active_nav="dashboard",
     )
+
+
+@app.route("/job/<int:job_id>/favorite", methods=["POST"])
+def update_favorite(job_id):
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or type(data.get("favorite")) is not bool:
+        return jsonify({"ok": False, "error": "Favorito inválido"}), 400
+    if not set_favorite(job_id, data["favorite"]):
+        return jsonify({"ok": False, "error": "Vacante no encontrada"}), 404
+    return jsonify({"ok": True, "favorite": data["favorite"]})
 
 
 @app.route("/job/<int:job_id>/status", methods=["POST"])
@@ -157,8 +171,8 @@ def _empty_stats():
     return {"total": 0, "new": 0, "hot": 0, "applied": 0}
 
 
-def _filters(score_min, is_new, status, q):
-    return {"score_min": score_min, "is_new": is_new, "status": status, "q": q}
+def _filters(score_min, is_new, status, q, favorites=False):
+    return {"score_min": score_min, "is_new": is_new, "status": status, "q": q, "favorites": "1" if favorites else ""}
 
 
 @app.route("/rescore", methods=["POST"])
@@ -612,9 +626,117 @@ def runs_log():
     return jsonify(RunManager.instance().tail(offset))
 
 
+# --- Ayuda: configurar con una IA (prompt + importar YAML) ---
+
+_PROMPT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "ayuda_prompt.md")
+
+
+def _render_ayuda(yaml_text: str = "", plan=None, errors=None):
+    with open(_PROMPT_PATH, encoding="utf-8") as f:
+        prompt = f.read()
+    return render_template("ayuda.html", active_nav="ayuda", prompt=prompt,
+                           yaml_text=yaml_text, plan=plan, errors=errors)
+
+
+@app.route("/ayuda")
+def ayuda():
+    return _render_ayuda()
+
+
+@app.route("/ayuda/revisar", methods=["POST"])
+def ayuda_revisar():
+    from config.importer import ImportConfigError, parse_import
+
+    text = request.form.get("yaml_text", "")
+    try:
+        return _render_ayuda(text, plan=parse_import(text))
+    except ImportConfigError as e:
+        return _render_ayuda(text, errors=e.errors)
+
+
+@app.route("/ayuda/aplicar", methods=["POST"])
+def ayuda_aplicar():
+    from automation.scheduler import sync_schedules
+    from config.importer import ImportConfigError, apply_import, parse_import
+
+    text = request.form.get("yaml_text", "")
+    try:
+        plan = parse_import(text)
+    except ImportConfigError as e:
+        return _render_ayuda(text, errors=e.errors)
+    apply_import(plan)
+    save_section_partial("dashboard", {"onboarding_done": True})
+    if "schedules" in plan.sections:
+        sync_schedules()
+    flash("Configuración importada. Revísala aquí y lanza tu primera búsqueda desde Historial y búsquedas.", "success")
+    return redirect(url_for("config_basic"))
+
+
+# --- Bienvenida (primer arranque) ---
+
+@app.context_processor
+def _inject_onboarding():
+    # Solo en la portada, y solo mientras no haya perfil ni se haya cerrado.
+    if request.endpoint != "index":
+        return {}
+    show = not get_settings()["dashboard"].get("onboarding_done") and not get_profile()
+    return {"show_onboarding": show}
+
+
+@app.route("/onboarding/done", methods=["POST"])
+def onboarding_done():
+    save_section_partial("dashboard", {"onboarding_done": True})
+    return ("", 204)
+
+
+def _port_in_use(host: str, port: int) -> bool:
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        return s.connect_ex((host, port)) == 0
+
+
+def _open_browser_when_ready(url: str, host: str, port: int) -> None:
+    import threading
+    import time
+    import webbrowser
+
+    def _wait_and_open():
+        for _ in range(60):
+            if _port_in_use(host, port):
+                webbrowser.open(url)
+                return
+            time.sleep(0.5)
+
+    threading.Thread(target=_wait_and_open, daemon=True).start()
+
+
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Job Hunter dashboard")
+    parser.add_argument("--open-browser", action="store_true",
+                        help="Abre el navegador al arrancar (lo usa el acceso directo JobHunter.bat)")
+    args = parser.parse_args()
+
+    host, port = "127.0.0.1", int(os.getenv("JOBHUNTER_PORT", "5000"))
+    url = f"http://{host}:{port}"
+
+    # Doble clic al acceso directo con el dashboard ya abierto (o lanzado al
+    # iniciar Windows): no levantar un segundo servidor, solo mostrarlo.
+    if _port_in_use(host, port):
+        print(f"Job Hunter ya estaba abierto en {url}")
+        if args.open_browser:
+            import webbrowser
+            webbrowser.open(url)
+        sys.exit(0)
+
     init_db()
+    from storage.repository import close_orphaned_runs
+    close_orphaned_runs()
     from automation.scheduler import init_scheduler
     init_scheduler()
-    print("Dashboard en http://127.0.0.1:5000")
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    if args.open_browser:
+        _open_browser_when_ready(url, host, port)
+    print(f"Dashboard en {url}")
+    app.run(host=host, port=port, debug=False)

@@ -1,52 +1,68 @@
 {% extends "base.html" %}
 {% block title %}Job Hunter Dashboard{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/job-panel.css') }}">{% endblock %}
 {% block content %}
 <div class="container-fluid px-4">
 
+  <section class="page-heading illustrated-heading">
+    <div><div class="eyebrow">TU PRÓXIMO CAPÍTULO</div><h1>Encuentra tu siguiente oportunidad<span>.</span></h1><p>Tus vacantes, ordenadas por lo que más importa: encajar contigo.</p></div>
+    <img class="hero-art" src="{{ url_for('static', filename='img/career-compass.png') }}" alt="" width="210" height="210">
+    <a href="/runs" class="btn btn-primary new-search"><span aria-hidden="true">＋</span> Nueva búsqueda</a>
+  </section>
   <!-- Stats -->
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
       <div class="card stat-card stat-card--primary p-3 text-center">
+        <span class="stat-symbol">{{ draw_icon("briefcase") }}</span>
         <div class="stat-value text-primary">{{ stats.total }}</div>
-        <div class="small">Total en DB</div>
+        <div class="small">Vacantes guardadas</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="card stat-card stat-card--info p-3 text-center">
+        <span class="stat-symbol">{{ draw_icon("spark") }}</span>
         <div class="stat-value text-info">{{ stats.new }}</div>
-        <div class="small">Nuevas hoy</div>
+        <div class="small">Nuevas</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="card stat-card stat-card--success p-3 text-center">
+        <span class="stat-symbol">{{ draw_icon("check") }}</span>
         <div class="stat-value text-success">{{ stats.hot }}</div>
-        <div class="small">Score ≥ {{ score_hot }}</div>
+        <div class="small">Alta afinidad · ≥ {{ score_hot }}</div>
       </div>
     </div>
     <div class="col-6 col-md-3">
       <div class="card stat-card stat-card--warning p-3 text-center">
+        <span class="stat-symbol">{{ draw_icon("runs") }}</span>
         <div class="stat-value text-warning">{{ stats.applied }}</div>
-        <div class="small">Aplicadas</div>
+        <div class="small">En seguimiento</div>
       </div>
     </div>
   </div>
 
+  <div class="section-heading"><h2>Explora tus vacantes <span>{{ total_count }}</span></h2><span class="small text-muted">Seleccionadas según tu perfil</span></div>
+  <div class="vacancy-views" aria-label="Vista de vacantes">
+    <a href="{{ url_for('index', q=filters.q, score_min=filters.score_min, status=filters.status, is_new=filters.is_new) }}" class="{% if not filters.favorites %}selected{% endif %}">Todas las vacantes</a>
+    <a href="{{ url_for('index', favorites='1', q=filters.q, score_min=filters.score_min, status=filters.status, is_new=filters.is_new) }}" class="{% if filters.favorites %}selected{% endif %}">☆ Mis favoritos</a>
+  </div>
   <!-- Filters -->
-  <form method="GET" class="card p-3 mb-4 border-0 shadow-sm">
+  <form method="GET" class="card filter-panel p-3 mb-4 border-0 shadow-sm">
+    <input type="hidden" name="favorites" value="{{ filters.favorites }}">
     <div class="row g-2 align-items-end">
       <div class="col-md-4">
-        <label class="form-label small fw-semibold mb-1">Buscar</label>
-        <input type="text" name="q" class="form-control form-control-sm"
+        <label for="search-q" class="form-label small fw-semibold mb-1">Buscar</label>
+        <input type="text" id="search-q" name="q" class="form-control form-control-sm"
                placeholder="Título o empresa..." value="{{ filters.q }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label small fw-semibold mb-1">Score mínimo</label>
-        <input type="number" name="score_min" class="form-control form-control-sm"
+        <label for="score-min" class="form-label small fw-semibold mb-1">Afinidad mínima</label>
+        <input type="number" id="score-min" name="score_min" class="form-control form-control-sm"
                placeholder="ej. 50" min="0" max="100" value="{{ filters.score_min }}">
       </div>
       <div class="col-md-2">
-        <label class="form-label small fw-semibold mb-1">Estado</label>
-        <select name="status" class="form-select form-select-sm">
+        <label for="filter-status" class="form-label small fw-semibold mb-1">Estado</label>
+        <select id="filter-status" name="status" class="form-select form-select-sm">
           <option value="">Todos</option>
           {% for s in statuses %}
           <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
@@ -71,7 +87,7 @@
 
   <!-- Results count -->
   <div class="mb-2 text-muted small">
-    {{ total_count }} vacante(s) — página {{ page }} de {{ total_pages }} — clic en una fila para ver la descripción
+    Página {{ page }} de {{ total_pages }} <span class="results-tip">Abre una vacante para ver su descripción</span>
   </div>
 
   <!-- Table -->
@@ -81,7 +97,7 @@
       <table class="table mb-0">
         <thead class="table-dark">
           <tr>
-            <th style="width:60px">Score</th>
+            <th style="width:80px">Afinidad</th>
             <th>Puesto</th>
             <th>Empresa</th>
             <th>Ubicación</th>
@@ -96,8 +112,8 @@
 
           <!-- Job row -->
           <tr class="job-row"
-              data-collapse-target="desc-{{ loop.index }}"
-              aria-expanded="false">
+              data-panel-job="{{ job.id }}"
+              aria-expanded="false" tabindex="0" aria-controls="job-panel" aria-haspopup="dialog" aria-label="Ver descripción: {{ job.title }}">
             <td>
               {% if job.score >= score_hot %}
                 <span class="badge score-hot rounded-pill">{{ job.score }}</span>
@@ -109,6 +125,7 @@
             </td>
             <td>
               {% if job.is_new %}<span class="new-dot" title="Nueva"></span>{% endif %}
+              <button type="button" class="favorite-button" data-favorite-job="{{ job.id }}" aria-pressed="{{ 'true' if job.is_favorite else 'false' }}" aria-label="{{ 'Quitar de' if job.is_favorite else 'Guardar en' }} favoritos: {{ job.title }}" title="Favorito"><span aria-hidden="true">{{ '★' if job.is_favorite else '☆' }}</span></button>
               <span class="fw-semibold">{{ job.title }}</span>
               <div class="source-icon">{{ job.source }}</div>
             </td>
@@ -116,7 +133,7 @@
             <td>
               {{ job.location }}
               {% if job.is_remote %}
-                <span class="badge remote-badge rounded-pill ms-1" style="font-size:.65rem">Remote</span>
+                <span class="badge remote-badge rounded-pill ms-1" style="font-size:.65rem">Remoto</span>
               {% endif %}
             </td>
             <td>
@@ -127,7 +144,7 @@
             <td class="text-muted small">{{ job.posted or job.scraped }}</td>
             <td>
               <select class="form-select form-select-sm status-select"
-                      data-job-id="{{ job.id }}"
+                      aria-label="Estado de {{ job.title }}" data-job-id="{{ job.id }}"
                       data-current="{{ job.status }}">
                 {% for s in statuses %}
                 <option value="{{ s }}" {% if job.status == s %}selected{% endif %}>{{ s }}</option>
@@ -135,20 +152,11 @@
               </select>
             </td>
             <td>
-              <span class="chevron me-2">▼</span>
+              <button type="button" class="btn btn-outline-primary btn-sm" data-open-job="{{ job.id }}" aria-label="Abrir {{ job.title }}">Abrir</button>
               {% if job.job_url %}
-              <a href="{{ job.job_url }}" target="_blank"
+              <a href="{{ job.job_url }}" target="_blank" rel="noopener noreferrer"
                  class="btn btn-outline-primary btn-sm">Ver</a>
               {% endif %}
-            </td>
-          </tr>
-
-          <!-- Description row (collapsible) -->
-          <tr class="desc-row">
-            <td colspan="8">
-              <div class="collapse" id="desc-{{ loop.index }}">
-                <div class="desc-body">{% if job.description %}{{ job.description }}{% else %}Sin descripción disponible.{% endif %}</div>
-              </div>
             </td>
           </tr>
 
@@ -159,8 +167,8 @@
   </div>
   {% else %}
   <div class="text-center text-muted py-5">
-    <div style="font-size:3rem">🔍</div>
-    <p class="mt-2">No hay vacantes con estos filtros.</p>
+    <img class="empty-art" src="{{ url_for('static', filename='img/career-compass.png') }}" alt="" width="180" height="180">
+    <h2 class="mt-2">Tu próxima oportunidad empieza aquí</h2><p class="text-muted mb-3">No hay vacantes con estos filtros. Prueba otra búsqueda o explora nuevas ofertas.</p><a href="/runs" class="btn btn-primary btn-sm">Buscar oportunidades</a>
     <a href="/" class="btn btn-outline-secondary btn-sm">Limpiar filtros</a>
   </div>
   {% endif %}
@@ -189,31 +197,25 @@
   {% endif %}
 
 </div>
+<dialog id="job-panel" class="job-panel" aria-labelledby="panel-title">
+  <div class="panel-toolbar"><span>DETALLE DE LA VACANTE</span><button type="button" class="panel-close" aria-label="Cerrar detalle" autofocus>×</button></div>
+  <div class="panel-content">
+    <div class="panel-overline"><span id="panel-source"></span><span id="panel-score"></span></div>
+    <h2 id="panel-title"></h2><p id="panel-company"></p>
+    <p id="panel-location" class="text-muted"></p><p id="panel-date" class="text-muted small"></p>
+    <div id="panel-stack"></div>
+    <div class="panel-actions"><button type="button" id="panel-favorite" class="btn btn-outline-secondary" aria-pressed="false">☆ Guardar favorito</button><a id="panel-link" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Ver oferta original ↗</a></div>
+    <label class="form-label" for="panel-status">Estado de mi candidatura</label>
+    <select id="panel-status" class="form-select status-select">{% for s in statuses %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select>
+    <h3 class="panel-description-title">Sobre esta oportunidad</h3>
+    <div id="panel-description"></div>
+  </div>
+  <div class="panel-footer"><button type="button" class="btn btn-outline-secondary btn-sm" id="panel-prev">← Anterior</button><span id="panel-position"></span><button type="button" class="btn btn-outline-secondary btn-sm" id="panel-next">Siguiente →</button></div>
+  <p id="panel-feedback" role="status" aria-live="polite"></p>
+</dialog>
+<div id="favorite-feedback" role="status" aria-live="polite"></div>
 {% endblock %}
 {% block extra_scripts %}
-<script>
-  // Row collapse is handled globally by static/js/app.js via data-collapse-target.
-
-  // Status update
-  document.querySelectorAll('.status-select').forEach(select => {
-    select.addEventListener('change', function () {
-      const jobId = this.dataset.jobId;
-      const status = this.value;
-      const original = this.dataset.current;
-      fetch(`/job/${jobId}/status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      }).then(r => r.json()).then(data => {
-        if (data.ok) {
-          this.dataset.current = status;
-          this.classList.add('border-success');
-          setTimeout(() => this.classList.remove('border-success'), 1500);
-        } else {
-          this.value = original;
-        }
-      }).catch(() => { this.value = original; });
-    });
-  });
-</script>
+<script type="application/json" id="page-jobs">{{ jobs|tojson }}</script>
+<script src="{{ url_for('static', filename='js/job-panel.js') }}"></script>
 {% endblock %}

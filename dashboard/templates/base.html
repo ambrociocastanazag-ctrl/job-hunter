@@ -1,3 +1,4 @@
+{% from "icons.html" import icon as draw_icon %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,22 +9,32 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/motion.css') }}">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-<nav class="navbar mb-4">
-  <div class="container-fluid">
-    <span class="navbar-brand">Job Hunter</span>
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="/" class="btn btn-outline-light btn-sm {% if active_nav == 'dashboard' %}active{% endif %}">Dashboard</a>
-      <a href="/config" class="btn btn-outline-light btn-sm {% if active_nav == 'config' %}active{% endif %}">Configuración</a>
-      <a href="/config/advanced" class="btn btn-outline-light btn-sm {% if active_nav == 'advanced' %}active{% endif %}">Avanzado</a>
-      <a href="/schedules" class="btn btn-outline-light btn-sm {% if active_nav == 'schedules' %}active{% endif %}">Horarios</a>
-      <a href="/runs" class="btn btn-outline-light btn-sm {% if active_nav == 'runs' %}active{% endif %}">Historial</a>
-    </div>
-  </div>
-</nav>
+<a class="skip-link" href="#main-content">Saltar al contenido</a>
+<aside class="sidebar">
+  <a class="brand" href="/" aria-label="Job Hunter, inicio"><span class="brand-mark">jh<span>↗</span></span><span>Job Hunter<small>Tu próximo paso.</small></span></a>
+  <div class="nav-caption">ESPACIO DE TRABAJO</div>
+  <nav class="side-nav" aria-label="Navegación principal">
+    {% for key, href, icon, label in [('dashboard','/','▦','Oportunidades'), ('runs','/runs','↗','Historial y búsquedas'), ('schedules','/schedules','◷','Horarios')] %}
+    <a href="{{ href }}" class="nav-item {% if active_nav == key %}active{% endif %}" {% if active_nav == key %}aria-current="page"{% endif %}>{{ draw_icon(key) }}{{ label }}</a>
+    {% endfor %}
+  </nav>
+  <div class="nav-caption">PREFERENCIAS</div>
+  <nav class="side-nav" aria-label="Preferencias">
+    {% for key, href, icon, label in [('config','/config','☷','Configuración'), ('advanced','/config/advanced','⚙','Avanzado'), ('ayuda','/ayuda','?','Ayuda para configurar')] %}
+    <a href="{{ href }}" class="nav-item {% if active_nav == key %}active{% endif %}" {% if active_nav == key %}aria-current="page"{% endif %}>{{ draw_icon(key) }}{{ label }}</a>
+    {% endfor %}
+  </nav>
+  <a class="sidebar-art" href="/config"><img src="{{ url_for('static', filename='img/career-compass.png') }}" alt="" width="160" height="160"><span>Encuentra tu dirección</span><small>Afina tu búsqueda {{ draw_icon('arrow') }}</small></a>
+  <div class="sidebar-footer"><span class="workspace-avatar">JH</span><div>Mi espacio personal<small>Job Hunter</small></div></div>
+</aside>
+<div class="app-shell">
+<header class="topbar"><div>Mi espacio <span>/</span> <strong>{{ {'dashboard':'Oportunidades', 'config':'Configuración', 'advanced':'Avanzado', 'schedules':'Horarios', 'runs':'Historial y búsquedas', 'ayuda':'Ayuda para configurar'}.get(active_nav, 'Job Hunter') }}</strong></div><span class="topbar-tag">Búsqueda de empleo</span></header>
+<main id="main-content" tabindex="-1">
 
 <div class="container-fluid px-4">
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -37,8 +48,54 @@
 </div>
 
 {% block content %}{% endblock %}
+</main>
+<footer class="page-footer">Job Hunter <span>Un paso más cerca de tu próximo empleo.</span></footer>
+</div>
 
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/motion.js') }}"></script>
+{% if show_onboarding %}
+<dialog class="onboarding" id="onboarding" aria-labelledby="onboarding-title">
+  <div class="onboarding-head">
+    <img src="{{ url_for('static', filename='img/career-compass.png') }}" alt="">
+    <div>
+      <h2 id="onboarding-title">Te damos la bienvenida a Job Hunter</h2>
+      <p>Busca vacantes por ti y les pone un puntaje según qué tanto encajan contigo.</p>
+    </div>
+  </div>
+  <ol class="onboarding-steps">
+    <li>
+      <strong>Cuéntale qué buscas</strong>
+      <p>Puesto, ubicación, modalidad, horarios… Una IA te hace las preguntas y te arma la configuración.</p>
+      <div class="onboarding-actions">
+        <a class="btn btn-primary btn-sm" href="/ayuda" data-onboarding-done>Ayúdame a configurarlo</a>
+        <a class="btn btn-outline-secondary btn-sm" href="/config" data-onboarding-done>Prefiero hacerlo a mano</a>
+      </div>
+    </li>
+    <li>
+      <strong>Lanza tu primera búsqueda</strong>
+      <p>En <em>Historial y búsquedas</em>, modo <em>inicial</em>: trae las vacantes del último mes.</p>
+    </li>
+    <li>
+      <strong>(Opcional) Que busque solo</strong>
+      <p>En <em>Horarios</em> eliges días y hora; en <em>Avanzado</em>, los avisos por Telegram.</p>
+    </li>
+  </ol>
+  <div class="onboarding-foot">
+    <button type="button" class="btn btn-link" id="onboarding-close">Ahora no</button>
+  </div>
+</dialog>
+<script>
+  (() => {
+    const dlg = document.getElementById('onboarding');
+    const markDone = () => navigator.sendBeacon('/onboarding/done');
+    dlg.addEventListener('close', markDone);
+    dlg.querySelectorAll('[data-onboarding-done]').forEach(a => a.addEventListener('click', markDone));
+    document.getElementById('onboarding-close').addEventListener('click', () => dlg.close());
+    dlg.showModal();
+  })();
+</script>
+{% endif %}
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

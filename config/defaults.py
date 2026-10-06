@@ -124,6 +124,8 @@ DEFAULTS: dict = {
         "per_page": 25,
         "statuses": ["Pendiente", "Aplicado", "Entrevista 1", "Entrevista Téc", "Oferta", "Rechazado", "Ghosted"],
         "catch_up_on_start": True,
+        # Ventana de bienvenida del primer arranque (ver dashboard/app.py).
+        "onboarding_done": False,
     },
     "schedules": [],
 }

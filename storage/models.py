@@ -36,6 +36,7 @@ class Job(Base):
     score = Column(Integer, default=0)
     stack_detected = Column(JSON, default=list)
     is_new = Column(Boolean, default=True)
+    is_favorite = Column(Boolean, default=False, nullable=False, server_default="0")
 
     applications = relationship("Application", back_populates="job")
 

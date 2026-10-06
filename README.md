@@ -13,10 +13,12 @@ Built as a real-world portfolio project by a junior Python developer actively jo
 - **Relevance scoring (0–100)** — bonuses for Django/FastAPI, junior mentions, LATAM-friendly, Docker, etc.
 - **Deduplication** — double hash strategy (URL + title+company) eliminates cross-platform duplicates
 - **Stack detection** — automatically detects technologies mentioned in job descriptions
-- **Web dashboard** — filterable table with collapsible descriptions, stats, and dynamic config
+- **Web dashboard** — filterable table with a keyboard-accessible detail drawer, persistent favorites, stats, and dynamic config
 - **Fully configurable from the dashboard** — search targeting, filters, scoring weights (including raw regex), stack detection, and notifications, split into a *Básico* (simple, non-technical) and *Avanzado* (regex, weights, execution parameters) view
 - **In-app scheduler** — create/pause/delete recurring runs (which days, what time) from `/schedules`, no Windows Task Scheduler editing required
 - **Manual runs with live console** — trigger a run on demand from `/runs`, watch its log stream in real time, cancel mid-run
+- **One-command Windows install** — `irm … | iex` sets up its own Python, a desktop shortcut, and updates in place without touching user data
+- **AI-assisted setup** — `/ayuda` hands out a prompt for any AI assistant; the YAML it returns is previewed, validated and imported in one step, plus a first-run welcome dialog
 - **Markdown digest** — configurable-size daily summary
 - **Telegram notifications** — sends digest and hot-vacancy alerts to your bot, credentials editable from the dashboard
 - **SQLite persistence** — tracks all jobs, the application pipeline, and full run history across runs
@@ -44,9 +46,11 @@ job_hunter/
 ├── config/
 │   ├── defaults.py        # DEFAULTS: every configurable value's fallback
 │   ├── settings.py        # get_settings()/save_section(): DEFAULTS + settings.yaml, cached
-│   ├── settings.yaml      # User overrides only (created on first run/save)
+│   ├── settings.yaml      # User overrides only (created on first save, not versioned)
 │   ├── validation.py      # Regex/schema validation before any section is saved
-│   └── profile.yaml       # Identity only (name, stack, languages) — not search behavior
+│   ├── importer.py        # /ayuda: AI-written YAML (plain words) -> validated settings + profile
+│   ├── ayuda_prompt.md    # The prompt users paste into an AI assistant
+│   └── profile.yaml       # Identity only (name, stack, languages) — not search behavior (not versioned)
 ├── core/
 │   ├── searcher.py        # Cartesian product scraper (site × keyword × location × job_type)
 │   ├── filters.py         # Exclusion chain (title, location, age, years required)
@@ -65,21 +69,25 @@ job_hunter/
 ├── automation/
 │   ├── runner.py          # RunManager: launches main.py as a subprocess, live log tail, cancel
 │   ├── scheduler.py       # APScheduler: builds cron jobs from settings.yaml's `schedules`
-│   ├── run_dashboard.bat  # Entry point for the "JobHunter Dashboard" at-logon task
+│   ├── run_dashboard.bat  # At-logon task: opens JobHunter.bat minimized, without browser
 │   ├── run_daily.bat      # Fallback manual/CLI entry point
 │   └── install_task.ps1   # Installs/removes the at-logon Windows Task
 ├── dashboard/
 │   ├── app.py             # Flask app: dashboard, config (basic/advanced), schedules, runs
-│   └── templates/         # base.html + index/config_basic/config_advanced/schedules/runs
+│   └── templates/         # base.html + index/config_basic/config_advanced/schedules/runs/ayuda
 ├── tests/
 │   ├── test_filters.py
 │   ├── test_scorer.py
 │   ├── test_deduper.py
 │   ├── test_settings.py
 │   ├── test_validation.py
-│   └── test_scheduler.py
+│   ├── test_scheduler.py
+│   └── test_importer.py
 ├── experiments/
 │   └── test_jobspy.py     # Smoke test
+├── assets/jobhunter.ico   # Shortcut icon
+├── install.ps1            # One-command installer/updater (irm | iex)
+├── JobHunter.bat          # Desktop-shortcut launcher: server in a window + browser
 ├── main.py                # CLI entry point (also invoked as a subprocess by the dashboard)
 └── requirements.txt
 ```
@@ -88,51 +96,63 @@ job_hunter/
 
 ## Setup
 
-### 1. Clone and create virtual environment
+### One-command install (Windows)
+
+No Python, Git or terminal knowledge needed. Open **PowerShell** (Windows key → type "PowerShell" → Enter) and paste:
+
+```powershell
+irm https://raw.githubusercontent.com/ambrociocastanazag-ctrl/job-hunter/main/install.ps1 | iex
+```
+
+[`install.ps1`](install.ps1) downloads the project to `%USERPROFILE%\JobHunter`, fetches
+[uv](https://docs.astral.sh/uv/) into `JobHunter\tools\` (which brings its own Python 3.12 —
+nothing is installed system-wide and `PATH` is untouched), installs the dependencies into
+`JobHunter\.venv`, creates a **Job Hunter** shortcut on the desktop and in the Start menu, and opens it.
+
+- **The shortcut** runs [`JobHunter.bat`](JobHunter.bat): a console window that hosts the server and
+  opens the browser. Closing the window stops Job Hunter (and any search in progress). Double-clicking
+  it while it's already open just opens the browser.
+- **Updating:** close Job Hunter and paste the same command again. User data (`data/`, `logs/`, `.env`,
+  `config/settings.yaml`, `config/profile.yaml`) isn't in the repo, so updates never overwrite it.
+- **Uninstalling:** disable "start with Windows" in `/schedules` if enabled, then delete
+  `%USERPROFILE%\JobHunter` and the two shortcuts.
+- From CMD instead of PowerShell: `powershell -c "irm https://raw.githubusercontent.com/ambrociocastanazag-ctrl/job-hunter/main/install.ps1 | iex"`.
+
+A step-by-step guide in Spanish for non-technical users lives in [`index.html`](index.html).
+
+### First steps after installing
+
+On first launch a welcome dialog points to **`/ayuda`**: it gives a prompt to paste into any AI
+assistant (ChatGPT, Claude, Gemini…), which interviews the person — role, experience, skills, roles
+to avoid, locations, remote/hybrid/onsite, job type, languages, schedule — and returns a
+`jobhunter.yaml`. Dropping that file on `/ayuda` shows a summary of every change before applying it.
+The prompt encodes the same platform constraints as the hand-tuned defaults (short LinkedIn-style
+titles in Spanish and English, English country names for Indeed/Glassdoor, ≤ ~120 combinations per
+run, the default scoring scale), and the importer ([`config/importer.py`](config/importer.py))
+enforces them: plain words are turned into accent-insensitive whole-word regexes, everything goes
+through the regular validators, an excluded title word that would discard one of the searched roles
+is rejected, and runs estimated above ~40 minutes are flagged.
+
+Then: `/runs` → mode "inicial" → **Ejecutar ahora** for the 30-day backfill.
+
+### Manual install (development)
+
+Python 3.12 is required: python-jobspy pins `numpy==1.26.3`, which has no wheels for 3.13+.
 
 ```bash
-git clone https://github.com/your-username/job-hunter.git
-cd job-hunter/job_hunter
-python -m venv ../venv
-../venv/Scripts/activate      # Windows
-# source ../venv/bin/activate # Linux/Mac
-pip install -r requirements.txt
+git clone https://github.com/ambrociocastanazag-ctrl/job-hunter.git
+cd job-hunter
+uv venv .venv --python 3.12
+uv pip install --python .venv/Scripts/python.exe -r requirements.txt
+.venv/Scripts/python.exe dashboard/app.py --open-browser
 ```
 
-### 2. Configure environment
-
-```bash
-copy .env.example .env
-```
-
-Edit `.env` — this file only holds secrets and machine-local settings, never search behavior:
-
-```env
-TELEGRAM_BOT_TOKEN=your_token_here
-TELEGRAM_CHAT_ID=your_chat_id_here
-DATABASE_URL=sqlite:///data/jobs.db
-LOG_LEVEL=INFO
-```
-
-The Telegram token/chat ID can also be set later from the dashboard (**Avanzado → Notificaciones**) — it writes to this same file.
-
-**Getting Telegram credentials:**
+`.env` (Flask secret, Telegram token/chat ID) is created on first start; see [`.env.example`](.env.example).
+The Telegram credentials are set from the dashboard (**Avanzado → Notificaciones**):
 1. Message [@BotFather](https://t.me/BotFather) → `/newbot` → copy the token
 2. Send any message to your bot, then visit `https://api.telegram.org/botTOKEN/getUpdates` → copy the `chat.id`
 
-### 3. Run smoke test
-
-```bash
-python experiments/test_jobspy.py
-```
-
-### 4. First run (30-day backfill)
-
-```bash
-python main.py --mode initial
-```
-
-Or, once the dashboard is up: `/runs` → mode "inicial" → **Ejecutar ahora**.
+Set `JOBHUNTER_PORT` to serve on a port other than 5000.
 
 ---
 
@@ -144,8 +164,8 @@ runs with a live log. The CLI remains the lower-level entry point the dashboard 
 
 ```bash
 # Start the dashboard (config UI + scheduler + manual runs)
-python dashboard/app.py
-# -> http://127.0.0.1:5000
+python dashboard/app.py --open-browser
+# -> http://127.0.0.1:5000 (or double-click the Job Hunter shortcut)
 
 # Daily incremental search + export + Telegram notification
 python main.py --mode daily
@@ -208,8 +228,8 @@ to the database at all.
 pytest tests/ -v
 ```
 
-50 unit tests covering filters, scorer, deduper, settings persistence/validation, and the
-scheduler.
+72 unit tests covering filters, scorer, deduper, favorites, settings persistence/validation, the
+scheduler, and the `/ayuda` YAML importer (including that the prompt's own example imports cleanly).
 
 ---
 
@@ -239,7 +259,7 @@ For a pure CLI/cron-style setup without the dashboard, `automation/run_daily.bat
 ## Notes
 
 - **LinkedIn** is the most reliable source. Indeed and Glassdoor results depend on anti-scraping measures at the time of the request.
-- `data/`, `logs/`, and `.env` are excluded from the repo via `.gitignore`. `config/settings.yaml` and `config/profile.yaml` (your search config and identity) are versioned, same as before — `config/defaults.py` is just the fallback for whatever they don't override.
+- `data/`, `logs/`, and `.env` are excluded from the repo via `.gitignore`. `config/settings.yaml` and `config/profile.yaml` (each user's search config and identity) are excluded too, so every install starts from `config/defaults.py` and updates never overwrite them.
 - Expected output: 5–20 relevant new vacancies per day with the default score threshold.
 
 ---
@@ -247,3 +267,7 @@ For a pure CLI/cron-style setup without the dashboard, `automation/run_daily.bat
 ## License
 
 MIT
+
+### Vacancy details and favorites
+
+Open a vacancy row (or press Enter) to inspect its detail drawer. Escape closes it and returns focus to the table. The drawer supports previous/next navigation, status updates, and favorites. Stars are stored in SQLite; use **Mis favoritos** to combine them with search and other filters. The `jobs.is_favorite` column is added automatically by `init_db()` on normal dashboard startup.

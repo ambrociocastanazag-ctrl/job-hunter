@@ -14,3 +14,14 @@ dist/
 build/
 .pytest_cache/
 .mypy_cache/
+
+# Configuracion personal: cada instalacion arranca con los valores por defecto
+# (config/defaults.py) y la edita desde el dashboard
+config/settings.yaml
+config/profile.yaml
+config/*.bak
+config/*.tmp
+
+# Instalador (uv + Python + cache viven aqui, ver install.ps1)
+tools/
+.test-tmp*/

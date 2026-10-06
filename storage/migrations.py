@@ -10,6 +10,7 @@ logger = get_logger(__name__)
 
 # table -> [(column_name, ddl_type_and_default), ...]
 _COLUMN_MIGRATIONS = {
+    "jobs": [("is_favorite", "BOOLEAN NOT NULL DEFAULT 0")],
     "search_runs": [
         ("mode", "VARCHAR(20) DEFAULT 'daily'"),
         ("trigger", "VARCHAR(20) DEFAULT 'cli'"),

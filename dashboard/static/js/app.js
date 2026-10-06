@@ -24,3 +24,12 @@ document.addEventListener('click', (e) => {
   if (!closeBtn) return;
   closeBtn.closest('.alert')?.remove();
 });
+
+// Keep vacancy descriptions accessible from the keyboard.
+document.addEventListener('keydown', (event) => {
+  if (!event.target.matches('.job-row[data-collapse-target]')) return;
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    event.target.click();
+  }
+});
