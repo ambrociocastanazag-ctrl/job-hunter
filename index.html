@@ -8,32 +8,27 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Mismos tokens que el dashboard (dashboard/static/css/style.css, tema "workspace"). */
   :root {
-    --color-primary: #003d9b;
-    --color-primary-container: #0052cc;
-    --color-secondary: #006c47;
-    --color-secondary-container: #82f9be;
-    --color-on-secondary-container: #00734c;
-    --color-tertiary: #7d5200;
-    --color-tertiary-container: #ffca81;
-    --color-error: #ba1a1a;
-    --color-error-container: #ffdad6;
-    --color-on-error-container: #93000a;
-    --color-background: #f9f9ff;
-    --color-on-background: #091c35;
+    --color-primary: #176b50;
+    --color-primary-container: #10543e;
+    --color-accent: #329873;
+    --color-chip: #e1f3e9;
+    --color-soft: #edf5ef;
+    --color-soft-border: #e0ebe3;
+    --color-background: #f7f8fa;
     --color-surface: #ffffff;
-    --color-surface-container-low: #f0f3ff;
-    --color-surface-container: #e7eeff;
-    --color-surface-container-high: #dfe8ff;
-    --color-on-surface: #091c35;
-    --color-on-surface-variant: #434654;
-    --color-outline-variant: #c3c6d6;
+    --color-surface-low: #f4f7f6;
+    --color-on-surface: #202b32;
+    --color-heading: #26382e;
+    --color-on-surface-variant: #69757c;
+    --color-outline-variant: #e3e8e6;
+    --color-warn-bg: #fff2d6;
+    --color-warn-fg: #8c641c;
     --radius-sm: .25rem;
-    --radius-md: .5rem;
-    --radius-lg: .75rem;
-    --radius-full: 9999px;
-    --shadow-1: 0px 4px 8px -2px rgba(0,0,0,.06);
-    --shadow-2: 0px 8px 20px -4px rgba(0,0,0,.10);
+    --radius-md: .6rem;
+    --radius-lg: .9rem;
+    --shadow-1: 0 2px 5px rgba(24,45,34,.025), 0 0 0 1px #e6ebe8;
     --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
   }
@@ -41,218 +36,195 @@
   body {
     margin: 0;
     background: var(--color-background);
-    color: var(--color-on-background);
+    color: var(--color-on-surface);
     font-family: var(--font);
+    font-size: 14px;
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
-  a { color: var(--color-primary); }
+  a { color: var(--color-primary); text-decoration: none; font-weight: 500; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 3px solid #289c77; outline-offset: 3px; }
+  .ui-icon { width: 20px; height: 20px; flex: 0 0 20px; vertical-align: middle; }
 
-  header.hero {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%);
-    color: #fff;
-    padding: 3.5rem 1.5rem 4.5rem;
-    text-align: center;
+  .topbar {
+    height: 76px; background: #fff; border-bottom: 1px solid #e6ebe8;
+    display: flex; align-items: center; justify-content: space-between; padding: 0 32px;
   }
-  header.hero .eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    background: rgba(255,255,255,.15);
-    border: 1px solid rgba(255,255,255,.3);
-    padding: .35rem .9rem;
-    border-radius: var(--radius-full);
-    font-size: .78rem;
-    font-weight: 600;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    margin-bottom: 1.25rem;
-  }
-  header.hero h1 {
-    font-size: clamp(2rem, 5vw, 2.9rem);
-    font-weight: 800;
-    letter-spacing: -.02em;
-    margin: 0 0 .75rem;
-  }
-  header.hero p {
-    font-size: 1.1rem;
-    max-width: 640px;
-    margin: 0 auto;
-    color: rgba(255,255,255,.9);
-  }
+  .brand { display: flex; align-items: center; gap: 11px; color: #25352e; font-size: 20px; font-weight: 750; letter-spacing: -.7px; }
+  .brand:hover { text-decoration: none; }
+  .brand small { display: block; font-size: 11px; font-weight: 400; letter-spacing: .1px; color: #849089; margin-top: 2px; }
+  .brand-mark { display: flex; align-items: center; justify-content: center; background: var(--color-primary); color: #fff; width: 42px; height: 44px; border-radius: 13px; letter-spacing: -2px; font-size: 23px; }
+  .brand-mark span { font-size: 17px; align-self: flex-start; margin-top: 7px; }
+  .topbar-tag { border: 1px solid #e7ece8; border-radius: 6px; padding: 6px 10px; color: #69796f; font-size: 11px; }
 
-  main {
-    max-width: 820px;
-    margin: -2.5rem auto 4rem;
-    padding: 0 1.5rem;
+  main { max-width: 860px; margin: 0 auto; padding: 36px 16px 48px; }
+
+  .hero {
+    position: relative; overflow: hidden; min-height: 215px;
+    background: var(--color-soft); border: 1px solid var(--color-soft-border); border-radius: 18px;
+    padding: 28px 250px 28px 28px; margin-bottom: 24px;
+  }
+  .eyebrow { font-size: 9px; font-weight: 700; letter-spacing: 1.8px; color: #7b8a81; margin: 0 0 10px; }
+  .hero h1 { font-size: clamp(24px, 3vw, 31px); line-height: 1.25; letter-spacing: -1.2px; font-weight: 650; color: var(--color-heading); margin: 0; }
+  .hero h1 span { color: var(--color-accent); }
+  .hero p { color: #7c8881; font-size: 13px; line-height: 1.7; margin: 12px 0 0; max-width: 480px; }
+  .hero-art {
+    position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+    width: 210px; height: 210px; object-fit: contain; pointer-events: none;
+    mask-image: radial-gradient(ellipse at center, #000 42%, transparent 72%);
   }
 
   .card {
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-1);
-    padding: 1.75rem;
-    margin-bottom: 1.5rem;
+    background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-1);
+    padding: 25px; margin-bottom: 20px;
   }
+  .card > h2 { font-size: 17px; letter-spacing: -.4px; color: var(--color-heading); margin: 0 0 18px; }
 
-  .prereqs { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; }
-  .prereq { display: flex; align-items: center; gap: .75rem; }
+  .prereqs { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+  .prereq { display: flex; align-items: center; gap: 12px; }
   .prereq .icon {
-    width: 40px; height: 40px; border-radius: var(--radius-md);
-    background: var(--color-surface-container-low);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.3rem; flex-shrink: 0;
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    background: var(--color-soft); color: var(--color-primary);
+    display: grid; place-items: center;
   }
-  .prereq strong { display: block; font-size: .92rem; }
-  .prereq span { font-size: .8rem; color: var(--color-on-surface-variant); }
+  .prereq strong { display: block; font-size: 13px; color: var(--color-heading); }
+  .prereq span { font-size: 12px; color: var(--color-on-surface-variant); }
 
   .steps { counter-reset: step; }
   .step {
-    display: grid;
-    grid-template-columns: 44px 1fr;
-    gap: 1.25rem;
-    padding: 1.75rem 0;
-    border-top: 1px solid var(--color-outline-variant);
+    display: grid; grid-template-columns: 32px 1fr; gap: 16px;
+    padding: 24px 0; border-top: 1px solid #edf0ee;
   }
-  .step:first-child { border-top: none; padding-top: .25rem; }
+  .step > div { min-width: 0; }  /* sin esto el comando largo ensancha la columna en celular */
+  .step:first-child { border-top: none; padding-top: 0; }
+  .step:last-child { padding-bottom: 0; }
   .step-number {
-    counter-increment: step;
-    width: 44px; height: 44px;
-    border-radius: var(--radius-full);
-    background: var(--color-surface-container-low);
-    color: var(--color-primary);
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 1.1rem;
+    counter-increment: step; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--color-chip); color: var(--color-primary);
+    display: grid; place-items: center; font-weight: 700; font-size: 13px;
   }
   .step-number::before { content: counter(step); }
-  .step h2 { font-size: 1.15rem; margin: .3rem 0 .4rem; }
-  .step p { margin: 0 0 .75rem; color: var(--color-on-surface-variant); font-size: .95rem; }
+  .step h2 { font-size: 15px; letter-spacing: -.3px; color: var(--color-heading); margin: 4px 0 6px; }
+  .step p { margin: 0 0 12px; color: var(--color-on-surface-variant); font-size: 13px; }
   .step p:last-child { margin-bottom: 0; }
 
-  .platform-tabs { display: flex; gap: .5rem; margin-bottom: .5rem; }
-  .platform-tab {
-    font-size: .75rem; font-weight: 600; padding: .25rem .7rem;
-    border-radius: var(--radius-full); background: var(--color-surface-container);
-    color: var(--color-on-surface-variant);
-  }
-
   pre {
-    position: relative;
-    background: var(--color-on-background);
-    color: #e7eeff;
-    border-radius: var(--radius-md);
-    padding: 1rem 3rem 1rem 1.1rem;
-    overflow-x: auto;
-    font-family: var(--font-mono);
-    font-size: .82rem;
-    line-height: 1.55;
-    margin: 0 0 .5rem;
+    position: relative; margin: 0 0 12px;
+    background: var(--color-surface-low); border: 1px solid var(--color-outline-variant); border-radius: 10px;
+    padding: 14px 96px 14px 16px; overflow-x: auto;
+    font-family: var(--font-mono); font-size: 12px; line-height: 1.6; color: #34433b;
   }
-  pre code { background: none; padding: 0; color: inherit; }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
   code {
-    font-family: var(--font-mono);
-    background: var(--color-surface-container-low);
-    color: var(--color-primary);
-    padding: .1rem .4rem;
-    border-radius: var(--radius-sm);
-    font-size: .88em;
+    font-family: var(--font-mono); font-size: .9em;
+    background: var(--color-surface-low); color: var(--color-primary);
+    padding: .1rem .35rem; border-radius: var(--radius-sm);
+    overflow-wrap: anywhere;
   }
   .copy-btn {
-    position: absolute; top: .6rem; right: .6rem;
-    background: rgba(255,255,255,.08);
-    border: 1px solid rgba(255,255,255,.15);
-    color: #e7eeff;
-    border-radius: var(--radius-sm);
-    font-size: .72rem;
-    font-family: var(--font);
-    padding: .3rem .55rem;
-    cursor: pointer;
-    transition: background-color .15s ease;
+    position: absolute; top: 9px; right: 9px;
+    background: var(--color-primary); border: 1px solid var(--color-primary); color: #fff;
+    border-radius: var(--radius-md); font-family: var(--font); font-size: 12px; font-weight: 500;
+    padding: 5px 12px; cursor: pointer; transition: background-color .15s ease;
   }
-  .copy-btn:hover { background: rgba(255,255,255,.18); }
-  .copy-btn.copied { background: var(--color-secondary); border-color: var(--color-secondary); color: #fff; }
+  .copy-btn:hover { background: var(--color-primary-container); }
+  .copy-btn.copied { background: var(--color-chip); border-color: var(--color-chip); color: var(--color-primary); }
 
   .callout {
-    display: flex; gap: .75rem;
-    background: var(--color-surface-container-low);
-    border-left: 3px solid var(--color-primary);
-    border-radius: var(--radius-sm);
-    padding: .85rem 1rem;
-    font-size: .88rem;
-    margin: .75rem 0;
+    display: flex; gap: 10px; align-items: flex-start;
+    background: var(--color-soft); border: 1px solid var(--color-soft-border); border-radius: 12px;
+    padding: 12px 14px; font-size: 12px; color: #305340; margin: 12px 0 0;
   }
-  .callout.warn { border-left-color: var(--color-tertiary); background: #fff8ec; }
-  .callout .icon { flex-shrink: 0; }
+  .callout .icon { flex-shrink: 0; color: var(--color-primary); display: flex; }
+  .callout .ui-icon { width: 18px; height: 18px; flex-basis: 18px; }
+  .callout code { background: #fff; }
+  .callout > span:last-child { min-width: 0; }
 
+  kbd {
+    display: inline-block; min-width: 22px; padding: 1px 7px; text-align: center;
+    font-family: var(--font); font-size: 12px; font-weight: 600; color: var(--color-heading);
+    background: #fff; border: 1px solid var(--color-outline-variant); border-bottom-width: 2px; border-radius: 6px;
+  }
   .path-tag {
-    display: inline-block;
-    background: var(--color-surface-container);
-    color: var(--color-on-surface-variant);
-    font-family: var(--font-mono);
-    font-size: .78rem;
-    padding: .15rem .5rem;
-    border-radius: var(--radius-sm);
+    display: inline-block; font-family: var(--font-mono); font-size: 11px;
+    background: var(--color-surface-low); color: var(--color-on-surface-variant);
+    border: 1px solid var(--color-outline-variant); padding: 1px 6px; border-radius: 6px;
+    word-break: break-all;
   }
 
-  ul.checklist { list-style: none; padding: 0; margin: 0; }
-  ul.checklist li { display: flex; gap: .6rem; align-items: flex-start; margin-bottom: .5rem; font-size: .92rem; }
+  ul.checklist { list-style: none; padding: 0; margin: 0 0 12px; }
+  ul.checklist li { position: relative; padding-left: 27px; margin-bottom: 8px; font-size: 13px; }
   ul.checklist li::before {
-    content: "✓";
-    flex-shrink: 0;
-    width: 20px; height: 20px;
-    background: var(--color-secondary-container);
-    color: var(--color-on-secondary-container);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: .7rem; font-weight: 700;
-    margin-top: .1rem;
+    content: "✓"; position: absolute; left: 0; top: 2px; width: 18px; height: 18px;
+    background: var(--color-chip); color: var(--color-primary); border-radius: 50%;
+    display: grid; place-items: center; font-size: 10px; font-weight: 700;
   }
 
   .done-card {
-    background: linear-gradient(135deg, var(--color-secondary-container) 0%, #eafff3 100%);
-    border-radius: var(--radius-lg);
-    padding: 2rem;
-    text-align: center;
-    box-shadow: var(--shadow-1);
+    display: flex; align-items: center; gap: 18px;
+    background: var(--color-soft); border: 1px solid var(--color-soft-border); border-radius: 18px;
+    padding: 22px 24px; margin-bottom: 20px;
   }
-  .done-card .icon { font-size: 2.5rem; margin-bottom: .5rem; }
-  .done-card h2 { color: var(--color-on-secondary-container); margin: 0 0 .4rem; font-size: 1.3rem; }
-  .done-card p { color: #045938; margin: 0; font-size: .95rem; }
+  .done-card .icon {
+    width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+    background: var(--color-chip); color: var(--color-primary); display: grid; place-items: center;
+  }
+  .done-card h2 { color: var(--color-heading); margin: 0 0 2px; font-size: 17px; letter-spacing: -.4px; }
+  .done-card p { color: #4f5d55; margin: 0; font-size: 13px; }
 
-  details.dev summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; }
-  details.dev[open] summary { margin-bottom: .75rem; }
-  details.dev p { color: var(--color-on-surface-variant); font-size: .92rem; }
+  .card p { font-size: 13px; }
+  details.dev summary { cursor: pointer; font-weight: 650; font-size: 15px; color: var(--color-heading); }
+  details.dev[open] summary { margin-bottom: 12px; }
+  details.dev p { color: var(--color-on-surface-variant); }
 
   footer {
-    text-align: center;
-    padding: 2rem 1.5rem 3rem;
-    color: var(--color-on-surface-variant);
-    font-size: .85rem;
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    max-width: 860px; margin: 0 auto; padding: 0 16px 32px;
+    font-size: 11px; color: #96a098;
   }
+
+  @media (max-width: 640px) {
+    .topbar { padding: 0 16px; }
+    .topbar-tag { display: none; }
+    .hero { padding: 24px 20px; }
+    .hero-art { display: none; }
+    .card { padding: 20px; }
+    pre { white-space: pre-wrap; word-break: break-all; padding: 46px 14px 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 
-<header class="hero">
-  <span class="eyebrow">🔍 Job Hunter</span>
-  <h1>Guía de instalación</h1>
-  <p>Búsqueda de empleos - Job hunter</p>
+<header class="topbar">
+  <a class="brand" href="#" aria-label="Job Hunter"><span class="brand-mark">jh<span>↗</span></span><span>Job Hunter<small>Tu próximo paso.</small></span></a>
+  <span class="topbar-tag">Guía de instalación</span>
 </header>
 
 <main>
 
+  <section class="hero">
+    <div class="eyebrow">GUÍA DE INSTALACIÓN</div>
+    <h1>Instala Job Hunter en <span>un par de minutos</span>.</h1>
+    <p>Un solo comando, sin instalar Python ni tocar configuraciones raras. Después lo abres
+    desde un icono en tu escritorio.</p>
+    <img class="hero-art" src="dashboard/static/img/career-compass.png" alt="" width="210" height="210">
+  </section>
+
   <section class="card">
-    <h2 style="margin-top:0;">Solo necesitas</h2>
+    <h2>Solo necesitas</h2>
     <div class="prereqs">
       <div class="prereq">
-        <div class="icon">🪟</div>
+        <div class="icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></div>
         <div><strong>Windows 10 u 11</strong><span>no hace falta instalar Python ni Git</span></div>
       </div>
       <div class="prereq">
-        <div class="icon">🌐</div>
+        <div class="icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div>
         <div><strong>Internet</strong><span>la instalación baja unos 100 MB</span></div>
       </div>
       <div class="prereq">
-        <div class="icon">📬</div>
+        <div class="icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 4-9 9M21 4l-6 17-3-8-8-3 17-6Z"/></svg></div>
         <div><strong>Telegram (opcional)</strong><span>para recibir avisos</span></div>
       </div>
     </div>
@@ -264,8 +236,9 @@
       <div class="step-number"></div>
       <div>
         <h2>Abre PowerShell</h2>
-        <p>Pulsa la tecla <strong>Windows</strong>, escribe <strong>PowerShell</strong> y pulsa <strong>Enter</strong>.
-        Se abre una ventana para escribir comandos. No hace falta abrirla como administrador.</p>
+        <p>Pulsa <kbd>Win</kbd> + <kbd>R</kbd> a la vez. En el cuadro <strong>Ejecutar</strong> que aparece, escribe
+        <code>powershell</code> y pulsa <kbd>Enter</kbd>. Se abre una ventana azul o negra para escribir comandos.
+        No hace falta abrirla como administrador.</p>
       </div>
     </div>
 
@@ -273,7 +246,7 @@
       <div class="step-number"></div>
       <div>
         <h2>Pega este comando y pulsa Enter</h2>
-        <p>Usa el botón <strong>Copiar</strong> y pega en PowerShell con clic derecho o <code>Ctrl</code>+<code>V</code>.</p>
+        <p>Usa el botón <strong>Copiar</strong> y pega en PowerShell con clic derecho o <kbd>Ctrl</kbd> + <kbd>V</kbd>.</p>
         <pre><code>irm https://raw.githubusercontent.com/ambrociocastanazag-ctrl/job-hunter/main/install.ps1 | iex</code></pre>
         <p>En uno o dos minutos, y sin que tengas que hacer nada más:</p>
         <ul class="checklist">
@@ -283,7 +256,7 @@
           <li>Abre Job Hunter por primera vez</li>
         </ul>
         <div class="callout">
-          <span class="icon">💡</span>
+          <span class="icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg></span>
           <span>¿Abriste <strong>CMD</strong> (Símbolo del sistema) en vez de PowerShell? Usa esta versión:
           <code>powershell -c "irm https://raw.githubusercontent.com/ambrociocastanazag-ctrl/job-hunter/main/install.ps1 | iex"</code></span>
         </div>
@@ -297,7 +270,7 @@
         <p>Haz doble clic en el icono <strong>Job Hunter</strong> del escritorio. Se abre una ventana negra
         (el servidor) y tu navegador en <code>http://127.0.0.1:5000</code>.</p>
         <div class="callout">
-          <span class="icon">⏻</span>
+          <span class="icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v8M6.3 7a8 8 0 1 0 11.4 0"/></svg></span>
           <span><strong>Cerrar la ventana negra apaga Job Hunter.</strong> Puedes minimizarla mientras lo usas.
           Si le das doble clic al icono con Job Hunter ya abierto, solo se abre el navegador.</span>
         </div>
@@ -352,13 +325,15 @@
   </section>
 
   <section class="done-card">
-    <div class="icon">🎉</div>
-    <h2>Listo</h2>
-    <p>Job Hunter está corriendo en tu máquina, buscando vacantes con tu configuración.</p>
+    <div class="icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></div>
+    <div>
+      <h2>Listo</h2>
+      <p>Job Hunter está corriendo en tu máquina, buscando vacantes con tu configuración.</p>
+    </div>
   </section>
 
-  <section class="card" style="margin-top:1.5rem;">
-    <h2 style="margin-top:0;">Actualizar o desinstalar</h2>
+  <section class="card">
+    <h2>Actualizar o desinstalar</h2>
     <p><strong>Actualizar:</strong> cierra la ventana de Job Hunter y vuelve a pegar el mismo comando del paso 2.
     Tus vacantes, tu configuración y tus credenciales de Telegram se conservan.</p>
     <p style="margin-bottom:0;"><strong>Desinstalar:</strong> si activaste el inicio automático, desactívalo primero en
@@ -382,8 +357,8 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 </main>
 
 <footer>
-  Job Hunter — construido con <a href="https://github.com/Bunsly/JobSpy" target="_blank" rel="noopener">python-jobspy</a>.
-  MIT License.
+  <span>Job Hunter · construido con <a href="https://github.com/Bunsly/JobSpy" target="_blank" rel="noopener">python-jobspy</a> · MIT</span>
+  <span>Un paso más cerca de tu próximo empleo.</span>
 </footer>
 
 <script>

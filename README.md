@@ -98,7 +98,7 @@ job_hunter/
 
 ### One-command install (Windows)
 
-No Python, Git or terminal knowledge needed. Open **PowerShell** (Windows key → type "PowerShell" → Enter) and paste:
+No Python, Git or terminal knowledge needed. Open **PowerShell** (`Win` + `R` → type `powershell` → Enter) and paste:
 
 ```powershell
 irm https://raw.githubusercontent.com/ambrociocastanazag-ctrl/job-hunter/main/install.ps1 | iex
